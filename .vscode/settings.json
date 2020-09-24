@@ -1,0 +1,9 @@
+{
+    "python.pythonPath": "/home/pasionlit/anaconda3/envs/mindspore/bin/python",
+    "python.autoComplete.extraPaths": ["./"],
+    "python.linting.pylintArgs": [
+        "--disable=W0312",
+        "--disable=E0401",
+    ],
+    "python.linting.enabled": false
+}

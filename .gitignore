@@ -1,0 +1,9 @@
+**/__pycache__/
+__pycache__/
+# Python:
+*.py[cod]
+*.so
+test*.py
+cuda*/
+main
+_envset.sh
