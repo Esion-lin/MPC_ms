@@ -161,3 +161,9 @@ class PlayerDecorator:
 				return func(*args, **kwargs)
 		return wrapper
 
+def set_global_deco(deco):
+	global __deco__
+	__deco__ = deco
+
+def get_global_deco():
+	return __deco__

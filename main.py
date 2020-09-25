@@ -14,9 +14,9 @@ def main(argv):
 
 	set_player(my_player)
 	init_pool()
-	from common.wrap_function import PlayerDecorator
+	from common.wrap_function import PlayerDecorator, set_global_deco
 	myDecorator = PlayerDecorator(my_player)
-
+	set_global_deco(myDecorator)
 	@myDecorator.from_(player_name = "esion")
 	def mul():
 		print("test")

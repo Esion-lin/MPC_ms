@@ -1,10 +1,42 @@
-
+# -*- coding: utf-8 -*-
 from .tensor import PrivateTensor
+import re
+'''
+用于triples的管理
+'''
+class TupleManage:
+	def __init__(self):
+		self.t_dict = {}
+	def unpack(self, key):
+		if re.match("\[.*\]", key):
+			return key[1:-1]
+	def __setitem__(self, key, value):
+		key = self.unpack(key)
+		self.t_dict[key] = value
+	def __getitem__(self, key):
+		key = self.unpack(key)
+		return self.t_dict[key]
+	def __contains__(self, key):
+		key = self.unpack(key)
+		return key in self.t_dict
+	def pop(self):
+		key = min(self.t_dict.keys())
+		value = self.t_dict[key]
+		del self.t_dict[key]
+		return value
+
 
 class VarPool:
 	def __init__(self, ctype, **kwargs):
 		self.__dict__ = kwargs
 		self.ctype = ctype
+		self.tm = TupleManage()
+	
+	def check_key(self, key):
+		if re.match("\[.*\]", key):
+			return True
+		return False
+
 	def check_list(self, arr:list):
 		for i in arr:
 			if not isinstance(i, self.ctype):
@@ -18,18 +50,23 @@ class VarPool:
 		if isinstance(value, self.ctype):
 			self.__dict__[key] = value
 		elif isinstance(value, list) and self.check_list(value):
-			self.__dict__[key] = value
+			self.tm[key] = value
 		else:
 			raise TypeError("need {} type".format(self.ctype.__name__))
 
 	def __getitem__(self, key):
+		if self.check_key(key):
+			self.tm[key]
 		return self.__dict__[key]
 		
 	def __contains__(self, key):
+		if self.check_key(key):
+			return key in self.tm
 		return key in self.__dict__
 
 
-	
+
+
 
 __tensor_pool__ = VarPool(PrivateTensor)
 

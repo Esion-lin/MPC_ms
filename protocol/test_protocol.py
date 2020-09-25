@@ -35,10 +35,15 @@ class Protocol:
 
 
 	@staticmethod
-	def open_with_player(player_name):
-		pass
+	def open_with_player(player_name,var_name):
+		from common.wrap_function import get_global_deco
+		dec = get_global_deco()
+		@dec.open_(player_name = player_name, var_name = var_name)
+		def open():
+			return get_var_pool()["x"].open()
+		return open()
 	
 	@staticmethod
-	def Muliple(x:Placeholder,y:Placeholder):
+	def Mul(x:Placeholder,y:Placeholder):
 		pass
 
