@@ -101,6 +101,7 @@ class PrivateTensor:
 			self.__value = self.check_tensor(kwargs)
 			self.__store_value = []
 			#public -> private
+		self.shape = self.__value.shape
 
 	def check_tensor(self, dictory):
 		tensor = dictory["tensor"]

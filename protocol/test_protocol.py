@@ -40,10 +40,32 @@ class Protocol:
 		dec = get_global_deco()
 		@dec.open_(player_name = player_name, var_name = var_name)
 		def open():
-			return get_var_pool()["x"].open()
+			return get_var_pool()[var_name].open()
 		return open()
 	
 	@staticmethod
-	def Mul(x:Placeholder,y:Placeholder):
-		pass
+	def make_triples(triples_name = "", maked_player = "", triples_shape = [1,1,1]):
+		@myDecorator.to_(player_name = maked_player, var_name = triples_name)
+		def triples(shape):
+			from protocol.test_protocol import Protocol
+			from common.tensor import PrivateTensor
+			tmp = [PrivateTensor(tensor = i, shared = True) for i in Protocol.triple()]
+			get_var_pool()[var_name] = tmp
+			return list(zip(*[ele.share() for ele in tmp]))
+		return triples(triples_shape)
+
+	@staticmethod
+	def Mul(x:Placeholder,y:Placeholder, triple = None):
+		if x.check() and y.check():
+			if x.shape != y.shape:
+				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
+			if triple == None:
+				#需要生成triples
+			else:
+				#比较triple和x的形状
+				#使用现成的triples
+
+		else:
+			raise NameError("Uninitialized placeholder!!")
+		return None
 

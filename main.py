@@ -39,7 +39,7 @@ def main(argv):
 		from protocol.test_protocol import Protocol
 		from common.tensor import PrivateTensor
 		tmp = [PrivateTensor(tensor = i, shared = True) for i in Protocol.triple(shape)]
-		get_var_pool()["[x]"] = tmp
+		get_var_pool()[var_name] = tmp
 		return list(zip(*[ele.share() for ele in tmp]))
 
 	def print_triple():

@@ -70,6 +70,7 @@ class PlayerDecorator:
 
 		@wraps(func)
 		def wrapper(*args, **kwargs):
+			
 			if player_name != "":
 				if self.check_player(player_name):
 					return func(*args, **kwargs)
@@ -91,11 +92,19 @@ class PlayerDecorator:
 
 		@wraps(func)
 		def wrapper(*args, **kwargs):
+			'''
+			add var_name to func
+			'''
+			g_dict = func.__globals__
+			g_dict["var_name"] = var_name
+			''''''
 			if player_name != "":
-				while not get_net_pool().check_connection():
-					print("cannot connect all node! reconnecting...")
-					time.sleep(2)
-				if self.check_player(player_name):
+				'''
+			add var_name to func
+			'''
+			g_dict = func.__globals__
+			g_dict["var_name"] = var_name
+			''''''if self.check_player(player_name):
 					#check args
 					dispatch_var = func(*args, **kwargs)
 					i = 0
@@ -128,6 +137,12 @@ class PlayerDecorator:
 
 		@wraps(func)
 		def wrapper(*args, **kwargs):
+			'''
+			add var_name to func
+			'''
+			g_dict = func.__globals__
+			g_dict["var_name"] = var_name
+			''''''
 			#send share to palyer
 			if player_name != "":
 				if not self.check_player(player_name):
