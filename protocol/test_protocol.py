@@ -78,9 +78,11 @@ class Protocol:
 			y_0 = y.fill()
 			alpha = x_0 - a
 			beta = y_0 - b
-			open_with_player(player_name = "", var_name = alpha)
-			open_with_player(player_name = "", var_name = beta)
-			z = alpha*y_0 + beta*x_0 + c
+			Placeholder.register(alpha,"alpha")
+			Placeholder.register(beta,"alpha")
+			Alpha = open_with_player(player_name = "", var_name = "alpha")
+			Beta = open_with_player(player_name = "", var_name = "beta")
+			z = Alpha*Beta + b*Alpha + a*Beta - c
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		return None

@@ -57,3 +57,7 @@ class Placeholder:
 			print("Init PlaceHolder first!(by running \"fill\" method)")
 		else
 			return value
+	
+	@staticmethod
+	def register(variable, name):
+		get_var_pool()[name] = variable

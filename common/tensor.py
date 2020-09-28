@@ -29,6 +29,7 @@ class IntTensor:
 		self.inv = P.Invert()
 		self.mul = P.Mul()
 		self.div = P.FloorDiv()
+	#TODO: 需要添加对其他类型数据计算的重载
 	def __add__(self, other):
 		return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
 
@@ -36,7 +37,10 @@ class IntTensor:
 		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
 
 	def __mul__(self, other):
-		return IntTensor((self.mul(self.value, other.value) / encodeFP32.scale_size()).asnumpy() % encodeFP32.module(),internal = True) 
+		if isinstance(other, int):
+			return IntTensor(self.value.asnumpy() * other % encodeFP32.module(), internal = True)
+		else:
+			return IntTensor((self.mul(self.value, other.value)).asnumpy() / encodeFP32.scale_size() % encodeFP32.module(),internal = True) 
 
 	def __div__(self, other):
 		return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True) 
@@ -51,7 +55,6 @@ class IntTensor:
 
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
-
 
 
 class PrivateTensor:
@@ -167,22 +170,39 @@ class PrivateTensor:
 
 
 	'''
-	TODO: operation overwriting(protocol dependence)
-	
+	TODO: operation overwriting()
+	'''
 	def __and__(self, other):
-		return Tensor(self.__value + other.convert_public())
+		if isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = self.__value + other.convert_public())
+		elif isinstance(other, int):
+			pass
+		elif isinstance(other, IntTensor):
+			return PrivateTensor(tensor = self.__value + othe)
+
 
 	def __sub__(self, other):
-		return Tensor(self.__value - other.convert_public())
+		if isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = self.__value - other.convert_public())
+		elif isinstance(other, int):
+			pass
+		elif isinstance(other, IntTensor):
+			return PrivateTensor(tensor = self.__value - othe)
+
 
 	def __mod__(self, other):
-		return
+		pass
 
 	def __mul__(self, other):
-		return 
+		if isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = self.__value * other.convert_public())
+		elif isinstance(other, IntTensor) or isinstance(other, int):
+			return PrivateTensor(tensor = self.__value * othe)
+		else:
+			raise TypeError("Does not support multiplication of privateTensor and {}".format(type(other)))
 
 	def __floordiv__(self, other):
-		return
+		pass
 
 
-	'''
+	
