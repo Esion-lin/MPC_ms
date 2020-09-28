@@ -42,7 +42,7 @@ class PlayerDecorator:
 	'''
 	replace the placeholder with privateTensor
 	'''
-	def fill_(self, func = None):
+	def replace_(self, func = None):
 		@wraps(func)
 		def wrapper(*args, **kwargs):
 			new_args = []
@@ -60,6 +60,17 @@ class PlayerDecorator:
 			return func(*new_args, **new_kwargs)
 		return wrapper
 
+	def fill_(self, func = None):
+		@wraps(func)
+		def wrapper(*args, **kwargs):
+			for value in args:
+				if isinstance(value, Placeholder):
+					value.fill()
+			for key,value in kwargs.items():
+				if isinstance(value, Placeholder):
+					value.fill()
+			return func(*args, **kwargs)
+		return wrapper
 
 	'''
 

@@ -38,11 +38,13 @@ class Protocol:
 	def open_with_player(player_name,var_name):
 		from common.wrap_function import get_global_deco
 		dec = get_global_deco()
+		if isinstance(var_name, Placeholder):
+			var_name = var_name.name
 		@dec.open_(player_name = player_name, var_name = var_name)
 		def open():
 			return get_var_pool()[var_name].open()
 		return open()
-	
+
 	@staticmethod
 	def make_triples(triples_name = "", maked_player = "", triples_shape = [1,1,1]):
 		@myDecorator.to_(player_name = maked_player, var_name = triples_name)
@@ -60,11 +62,25 @@ class Protocol:
 			if x.shape != y.shape:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
+				triple = make_triples(triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
+				
 				#需要生成triples
 			else:
-				#比较triple和x的形状
+				if not triple.is_list:
+					raise TypeError("triples need to be a tuple!!!")
+				if triple[0].shape != x.shape:
+					raise IndexError("triples shape invalid!!!")
 				#使用现成的triples
-
+			a = triple[0]
+			b = triple[1]
+			c = triple[2]
+			x_0 = x.fill()
+			y_0 = y.fill()
+			alpha = x_0 - a
+			beta = y_0 - b
+			open_with_player(player_name = "", var_name = alpha)
+			open_with_player(player_name = "", var_name = beta)
+			z = alpha*y_0 + beta*x_0 + c
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		return None

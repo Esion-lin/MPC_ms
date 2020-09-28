@@ -25,8 +25,14 @@ class TupleManage:
 		del self.t_dict[key]
 		return value
 
-
 class VarPool:
+		
+	'''
+	key: "[alphabet]": 普通变量； "[\[alphabet\]]"：数组变量
+			^							^
+			对应单个PrivateTensor		对应PrivateTensor数组
+	'''
+
 	def __init__(self, ctype, **kwargs):
 		self.__dict__ = kwargs
 		self.ctype = ctype
