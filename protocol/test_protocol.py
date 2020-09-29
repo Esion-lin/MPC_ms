@@ -57,7 +57,7 @@ class Protocol:
 		return triples(triples_shape)
 
 	@staticmethod
-	def Mul(x:Placeholder,y:Placeholder, triple = None):
+	def Mul(x:Placeholder,y:Placeholder,z:Placeholder triple = None):
 		if x.check() and y.check():
 			if x.shape != y.shape:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
@@ -82,8 +82,11 @@ class Protocol:
 			Placeholder.register(beta,"alpha")
 			Alpha = open_with_player(player_name = "", var_name = "alpha")
 			Beta = open_with_player(player_name = "", var_name = "beta")
-			z = Alpha*Beta + b*Alpha + a*Beta - c
+			#Todo:实现PlaceHolder
+			z.set_value(Alpha*Beta + b*Alpha + a*Beta - c)
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		return None
-
+	def Conv2d(x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
+		pass
+		

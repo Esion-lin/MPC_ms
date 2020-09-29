@@ -42,7 +42,10 @@ class Placeholder:
 			return 1
 		else:
 			return len(self.value)
-	
+	def set_value(self, ptensor):
+		self.value = ptensor
+		self.shape = ptensor.shape
+
 	def __iter__(self):
 		if not self.is_list:
 			raise TypeError("PrivateTensor cannot be accessed by subscripts!")
@@ -52,7 +55,7 @@ class Placeholder:
 		value = object.__getattribute__(self,name)
 		if value == None:
 			raise AttributeError("key Error {}".format(name))
-		che_list = ["check","fill","__init__","__dict__", "name"]
+		che_list = ["check","fill","__init__","__dict__", "name", "set_value"]
 		if name not in che_list and not self.check():
 			print("Init PlaceHolder first!(by running \"fill\" method)")
 		else
