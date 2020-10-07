@@ -79,7 +79,7 @@ class Protocol:
 			alpha = x_0 - a
 			beta = y_0 - b
 			Placeholder.register(alpha,"alpha")
-			Placeholder.register(beta,"alpha")
+			Placeholder.register(beta,"beta")
 			Alpha = open_with_player(player_name = "", var_name = "alpha")
 			Beta = open_with_player(player_name = "", var_name = "beta")
 			#Todo:实现PlaceHolder
@@ -88,5 +88,8 @@ class Protocol:
 			raise NameError("Uninitialized placeholder!!")
 		return None
 	def Conv2d(x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
+		'''
+		w*x ->  y
+		'''
 		pass
 		

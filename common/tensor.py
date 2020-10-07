@@ -29,9 +29,14 @@ class IntTensor:
 		self.inv = P.Invert()
 		self.mul = P.Mul()
 		self.div = P.FloorDiv()
+		self.matmul = P.MatMul()
 	#TODO: 需要添加对其他类型数据计算的重载
+
+	
 	def __add__(self, other):
-		return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+		#return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+		self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
+		return self
 
 	def __sub__(self, other):
 		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
@@ -55,6 +60,26 @@ class IntTensor:
 
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
+	def Matmul(self, other):
+		'''
+		fluent interface
+		'''
+		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
+		self.value = Tensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) / encodeFP32.scale_size() % encodeFP32.module(), dtype = mindspore.int32)
+		return self
+	def im2col(self, h, w, padding, stride):
+		'''
+		self -> col
+		TODO:返回一个新的展开的IntTensor
+		'''
+		pass 
+
+
+	def Conv(self, filters，stride, padding):
+		'''
+		TODO：使用matmul得到卷积结果的Tensor
+		'''
+		pass
 
 
 class PrivateTensor:
