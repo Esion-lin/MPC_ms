@@ -55,9 +55,18 @@ class Protocol:
 			get_var_pool()[var_name] = tmp
 			return list(zip(*[ele.share() for ele in tmp]))
 		return triples(triples_shape)
-
 	@staticmethod
-	def Mul(x:Placeholder,y:Placeholder,z:Placeholder triple = None):
+	def Add(x:Placeholder,y:Placeholder,z:Placeholder):
+		assert x.check() and y.check()
+		if x.shape != y.shape:
+			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
+		x_0 = x.fill()
+		y_0 = y.fill()
+		z.set_value(x_0 + y_0)
+		# fluent interface
+		return z
+	@staticmethod
+	def Mul(x:Placeholder,y:Placeholder,z:Placeholder, triple = None):
 		if x.check() and y.check():
 			if x.shape != y.shape:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
@@ -86,10 +95,13 @@ class Protocol:
 			z.set_value(Alpha*Beta + b*Alpha + a*Beta - c)
 		else:
 			raise NameError("Uninitialized placeholder!!")
-		return None
+		# fluent interface
+		return z
 	def Conv2d(x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
 		'''
 		w*x ->  y
+		使用tensor明文下的卷积操作构建协议的卷积
 		'''
-		pass
+		# fluent interface
+		return y
 		
