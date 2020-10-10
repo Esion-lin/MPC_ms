@@ -1,6 +1,7 @@
 from mindspore.nn import Cell
 from .trait import Trait
-class PrivateCell:
+import abc
+class PrivateCell(abc.ABC):
 	'''
 	input -> Shelling(privateTensor -> Tensor)
 	output -> Packing(Tensor -> privateTensor)
@@ -9,6 +10,7 @@ class PrivateCell:
 	def __init__(self):
 		pass
 		#define env
+	@abstractmethod
 	def construct(self, input):
 		#Separate network and graph
 		pass
@@ -45,11 +47,18 @@ class PrivateCell:
 			traits = self.__dict__['_traits']
 			if name in traits:
 				return traits[name]
+	
 	def __call__(self, *args):
 		self.construct(args)
-
+	
+	@abstractmethod
 	def get_grad(self, input):
 		pass
-
+	
+	@abstractmethod
 	def construct_extractor(self):
+		pass
+
+	@abstractmethod
+	def set_weight(self):
 		pass
