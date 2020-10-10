@@ -4,6 +4,7 @@ from config import *
 from communication import CallBack
 from communication.callback import Dealer
 from common.var_pool import get_pool as get_var_pool 
+from nn.layer.conv import Conv
 import sys
 def main(argv):
 	config = Config(filename = "./config")
@@ -63,7 +64,19 @@ def main(argv):
 		else:
 			print("{} != {}".format(a * b,c))
 	'''test input and open'''
-	# input()
+	x = input()
+	from nn.pcell import PrivateCell
+	from nn.layer.conv import Conv
+	from nn.layer.activation import Relu
+	class testNet(PrivateCell):
+		def __init__(self):
+			self.conv2d = Conv(stride=2,padding=True)
+			self.relu = Relu()
+		def construct(self, input_var):
+			tmp = self.conv2d(input_var)
+			tmp = self.relu(tmp)
+			return tmp
+	testNet(x)		
 	# open()
 	
 	#test triple
