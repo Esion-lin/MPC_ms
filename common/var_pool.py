@@ -69,6 +69,10 @@ class VarPool:
 		if self.check_key(key):
 			return key in self.tm
 		return key in self.__dict__
+	def __delitem__(self, key):
+		if self.check_key(key):
+			del self.tm[key]
+		del self.value[key]
 
 
 

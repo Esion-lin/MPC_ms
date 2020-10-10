@@ -64,3 +64,6 @@ class Placeholder:
 	@staticmethod
 	def register(variable, name):
 		get_var_pool()[name] = variable
+	
+	def erase(self):
+		del get_var_pool()[name]

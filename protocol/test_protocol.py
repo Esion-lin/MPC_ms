@@ -97,6 +97,7 @@ class Protocol:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface
 		return z
+	@staticmethod
 	def Conv2d(x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
 		'''
 		w*x ->  y
@@ -104,4 +105,33 @@ class Protocol:
 		'''
 		# fluent interface
 		return y
-		
+	@staticmethod
+	def square(x:Placeholder, y:Placeholder, triple = None):
+		if x.check():
+			if triple == None:
+				triple = make_triples(triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
+			#TODO 使用squre——triple实现该方法
+			pass
+		else:
+			raise NameError("Uninitialized placeholder!!")
+	@staticmethod
+	def relu(x:Placeholder):
+		w0 = 0.44015372000819103
+		w1 = 0.500000000
+		w2 = 0.11217537671414643
+		w4 = -0.0013660836712429923
+		w6 = 9.009136367360004e-06
+		w8 = -2.1097433984e-08
+		#TODO 计算多项式，高次项如何展开有待商榷
+		pass
+		return x
+
+	@staticmethod
+	def avgpool2d(x, pool_size, strides, padding):
+		#TODO: 实现平均池化
+		pass
+		return x
+	def maxpool2d(x, pool_size, strides, padding):
+		#TODO: 实现z最大池化
+		pass
+		return x
