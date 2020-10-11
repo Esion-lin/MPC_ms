@@ -6,14 +6,14 @@ class Placeholder:
 	def __init__(self, name, shape = None):
 		self.name = name
 		self.shape = shape
-		self.is_list = re.match("\[.*\]", key)? True:False 
+		self.is_list = True if re.match("\[.*\]", name) else False 
 
 	def fill(self):
 		while not self.check():
 			time.sleep(1)
 		self.value = get_var_pool()[self.name]
 		if self.is_list ^ isinstance(self.value,list):
-			raise TypeError("except type {}, but got {}!".format(self.is_list?"list":"PrivateTensor", self.value))
+			raise TypeError("except type {}, but got {}!".format("list" if self.is_list else "PrivateTensor", self.value))
 		if self.shape != None:
 			if isinstance(self.value, list):
 				if self.shape != self.value[0].shape:
@@ -46,24 +46,26 @@ class Placeholder:
 		self.value = ptensor
 		self.shape = ptensor.shape
 
+
 	def __iter__(self):
 		if not self.is_list:
 			raise TypeError("PrivateTensor cannot be accessed by subscripts!")
 		return iter(self.value)
 
-	def __getattribute__(self, name):
-		value = object.__getattribute__(self,name)
-		if value == None:
-			raise AttributeError("key Error {}".format(name))
-		che_list = ["check","fill","__init__","__dict__", "name", "set_value"]
-		if name not in che_list and not self.check():
-			print("Init PlaceHolder first!(by running \"fill\" method)")
-		else
-			return value
+	# def __getattribute__(self, name):
+	# 	value = object.__getattribute__(self,name)
+	# 	che_list = ["check","fill","__init__","__dict__", "name", "set_value", "shape","inject"]
+	# 	if name not in che_list and not self.check():
+	# 		print("Init PlaceHolder first!(by running \"fill\" method)")
+	# 	else:
+	# 		return value
 	
 	@staticmethod
 	def register(variable, name):
 		get_var_pool()[name] = variable
 	
+	def inject(self):
+		get_var_pool()[self.name] = self.value
+
 	def erase(self):
 		del get_var_pool()[name]

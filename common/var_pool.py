@@ -62,7 +62,7 @@ class VarPool:
 
 	def __getitem__(self, key):
 		if self.check_key(key):
-			self.tm[key]
+			return self.tm[key]
 		return self.__dict__[key]
 		
 	def __contains__(self, key):

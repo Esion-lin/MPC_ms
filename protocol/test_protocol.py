@@ -1,6 +1,7 @@
 from crypto import Factory
 from common.tensor import IntTensor
 from common.placeholder import Placeholder
+from common.var_pool import get_pool as get_var_pool 
 class Protocol:
 	'''
 	dispatch function:
@@ -19,6 +20,7 @@ class Protocol:
 		if not share0 is None and len(share1) == 2:
 			return True
 		else:
+			print("share0 is None" if share0 is None else len(share1))
 			return False
 
 	@staticmethod
@@ -46,23 +48,38 @@ class Protocol:
 		return open()
 
 	@staticmethod
+	def input_with_player(player_name,var_name, ptensor):
+		from common.wrap_function import get_global_deco
+		dec = get_global_deco()
+		@dec.to_(player_name = player_name, var_name = var_name)
+		def input():
+			get_var_pool()[var_name] = ptensor
+			return ptensor.share()
+		return input()
+
+	@staticmethod
 	def make_triples(triples_name = "", maked_player = "", triples_shape = [1,1,1]):
-		@myDecorator.to_(player_name = maked_player, var_name = triples_name)
+		from common.wrap_function import get_global_deco
+		dec = get_global_deco()
+		@dec.to_(player_name = maked_player, var_name = triples_name)
 		def triples(shape):
 			from protocol.test_protocol import Protocol
 			from common.tensor import PrivateTensor
-			tmp = [PrivateTensor(tensor = i, shared = True) for i in Protocol.triple()]
+			tmp = [PrivateTensor(tensor = i, shared = True) for i in Protocol.triple(shape)]
 			get_var_pool()[var_name] = tmp
 			return list(zip(*[ele.share() for ele in tmp]))
 		return triples(triples_shape)
 	@staticmethod
-	def Add(x:Placeholder,y:Placeholder,z:Placeholder):
+	def Add(x:Placeholder,y:Placeholder,z:Placeholder = None):
 		assert x.check() and y.check()
 		if x.shape != y.shape:
 			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 		x_0 = x.fill()
 		y_0 = y.fill()
+		if z == None:
+			z = Placeholder("z")
 		z.set_value(x_0 + y_0)
+		z.inject()
 		# fluent interface
 		return z
 	@staticmethod
@@ -132,6 +149,6 @@ class Protocol:
 		pass
 		return x
 	def maxpool2d(x, pool_size, strides, padding):
-		#TODO: 实现z最大池化
+		#TODO: 实现最大池化
 		pass
 		return x

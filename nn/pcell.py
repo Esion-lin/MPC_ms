@@ -1,6 +1,7 @@
 from mindspore.nn import Cell
 from .trait import Trait
 import abc
+from abc import abstractmethod
 class PrivateCell(abc.ABC):
 	'''
 	input -> Shelling(privateTensor -> Tensor)

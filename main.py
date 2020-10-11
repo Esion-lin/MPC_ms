@@ -70,7 +70,9 @@ def main(argv):
 	y.fill()
 	from protocol.test_protocol import Protocol
 	Protocol.Add(x,y)
-	#test mul
+	#test triple
+	Protocol.make_triples("[tmp]","Emme", [3,3,3])
+	print(get_var_pool()["[tmp]"])
 	
 
 	'''

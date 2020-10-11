@@ -18,6 +18,7 @@ import re
 
 '''
 def reveal(data):
+	print("dealing")
 	if "key" not in data:
 		raise KeyError("no key in json!")
 	if "value" not in data:
@@ -34,6 +35,7 @@ def reveal(data):
 			myPool[key][i].add_value(PrivateTensor(tensor = value[i], internal = True))
 	else:
 		myPool[key].add_value(PrivateTensor(tensor = value, internal = True))
+		
 	
 def private_input(data):
 	if "key" not in data:

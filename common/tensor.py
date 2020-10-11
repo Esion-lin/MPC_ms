@@ -34,9 +34,9 @@ class IntTensor:
 
 	
 	def __add__(self, other):
-		#return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
-		self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
-		return self
+		return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+		#self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
+		#return self
 
 	def __sub__(self, other):
 		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
@@ -75,7 +75,7 @@ class IntTensor:
 		pass 
 
 
-	def Conv(self, filters，stride, padding):
+	def Conv(self, filters, stride, padding):
 		'''
 		TODO：使用matmul得到卷积结果的Tensor
 		'''
@@ -104,7 +104,7 @@ class PrivateTensor:
 			self.protocol = kwargs["protocol"]
 		else:
 			if __debug__:
-				print("use default protocol in dispatch")
+				print("use default protocol")
 			from protocol.test_protocol import Protocol
 			self.protocol = Protocol
 		if "shared" in kwargs:
@@ -197,7 +197,7 @@ class PrivateTensor:
 	'''
 	TODO: operation overwriting()
 	'''
-	def __and__(self, other):
+	def __add__(self, other):
 		if isinstance(other, PrivateTensor):
 			return PrivateTensor(tensor = self.__value + other.convert_public())
 		elif isinstance(other, int):

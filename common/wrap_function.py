@@ -110,12 +110,10 @@ class PlayerDecorator:
 			g_dict["var_name"] = var_name
 			''''''
 			if player_name != "":
-				'''
-			add var_name to func
-			'''
-			g_dict = func.__globals__
-			g_dict["var_name"] = var_name
-			''''''if self.check_player(player_name):
+				while not get_net_pool().check_connection():
+					print("cannot connect all node! reconnecting...")
+					time.sleep(2)
+				if self.check_player(player_name):
 					#check args
 					dispatch_var = func(*args, **kwargs)
 					i = 0
@@ -171,6 +169,7 @@ class PlayerDecorator:
 							time.sleep(1)
 					else:
 						while not get_var_pool()[var_name].check_open():
+							print("checking")
 							time.sleep(1)
 					#TODO: timeout check
 					pass

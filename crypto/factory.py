@@ -1,5 +1,5 @@
 '''
-Factory for uniform random/decode/encode/...
+Factory for random/decode/encode/...
 
 '''
 from mindspore import Tensor

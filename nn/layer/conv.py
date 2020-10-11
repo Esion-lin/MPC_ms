@@ -4,7 +4,7 @@ import time
 class Conv(PrivateCell):
     def __init__(self, stride = 1, padding = False, weight = None):
         self.pro = get_protocol()
-        self.peremeter = weight?weight:self.set_weight()
+        self.peremeter = weight if weight != None else self.set_weight()
         self.stride = stride
         self.padding = padding
     def construct(self, input_var, output_var = None):
