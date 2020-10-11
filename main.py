@@ -22,13 +22,13 @@ def main(argv):
 	def mul():
 		print("test")
 
-	@myDecorator.to_(player_name = "Bob", var_name = "x")
-	def input():
+	def input(name):
 		from protocol.test_protocol import Protocol
+		
 		from common.tensor import PrivateTensor,IntTensor
+
 		ptensor = PrivateTensor(shared = True, tensor = IntTensor([998,1234,9.88]))
-		get_var_pool()["x"] = ptensor
-		return ptensor.share()
+		return Protocol.input_with_player("Bob", name, ptensor)
 
 	@myDecorator.open_(player_name = "Emme", var_name = "x")
 	def open():
@@ -64,10 +64,20 @@ def main(argv):
 		else:
 			print("{} != {}".format(a * b,c))
 	'''test input and open'''
-	x = input()
+	x = input("x")
+	x.fill()
+	y = input("y")
+	y.fill()
+	from protocol.test_protocol import Protocol
+	Protocol.Add(x,y)
+	#test mul
+	
+
+	'''
 	from nn.pcell import PrivateCell
 	from nn.layer.conv import Conv
 	from nn.layer.activation import Relu
+	
 	class testNet(PrivateCell):
 		def __init__(self):
 			self.conv2d = Conv(stride=2,padding=True)
@@ -77,12 +87,14 @@ def main(argv):
 			tmp = self.relu(tmp)
 			return tmp
 	testNet(x)		
-	# open()
+	'''
+	from protocol.test_protocol import Protocol
+	print(Protocol.open_with_player("Emme", "z").to_native())
 	
 	#test triple
-	triples([1,1,3])
-	check()
-	check2()
+	# triples([1,1,3])
+	# check()
+	# check2()
 	my_player.destroy()
 
 
