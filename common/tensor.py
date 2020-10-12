@@ -34,7 +34,11 @@ class IntTensor:
 
 	
 	def __add__(self, other):
-		return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+		if isinstance(other, IntTensor):
+			return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+		elif isinstance(other, PrivateTensor):
+			# 数据与share相加得到share
+			return PrivateTensor(tensor = self + other.convert_public())
 		#self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
 		#return self
 
@@ -220,7 +224,7 @@ class PrivateTensor:
 		if isinstance(other, PrivateTensor):
 			return PrivateTensor(tensor = self.__value * other.convert_public())
 		elif isinstance(other, IntTensor) or isinstance(other, int):
-			return PrivateTensor(tensor = self.__value * othe)
+			return PrivateTensor(tensor = self.__value * other)
 		else:
 			raise TypeError("Does not support multiplication of privateTensor and {}".format(type(other)))
 

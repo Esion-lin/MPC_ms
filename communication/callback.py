@@ -26,7 +26,9 @@ def reveal(data):
 	key = data["key"]
 	value = data["value"]
 	myPool = get_pool()
-	
+	#--!--key 可能未创建
+	while key not in myPool:
+		myPool = get_pool()
 	# TODO : filter for selization tensor
 	if re.match("\[.*\]", key) != None:
 		if len(myPool[key]) != len(value):
@@ -34,6 +36,7 @@ def reveal(data):
 		for i in range(len(myPool[key])):
 			myPool[key][i].add_value(PrivateTensor(tensor = value[i], internal = True))
 	else:
+		
 		myPool[key].add_value(PrivateTensor(tensor = value, internal = True))
 		
 	
