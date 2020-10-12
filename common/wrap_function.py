@@ -120,8 +120,8 @@ class PlayerDecorator:
 					for (name,player) in get_config().players.items():
 						if name != player_name:
 							data = wrap_json(ACTION.SHARE, var_name, dispatch_var[i])
-							if __debug__:
-								print(data,player.host)
+							# if __debug__:
+								# print(data,player.host)
 							get_net_pool().send(data = data, player = player)
 							i = i + 1
 					#TODO: placeholder / True
@@ -169,7 +169,6 @@ class PlayerDecorator:
 							time.sleep(1)
 					else:
 						while not get_var_pool()[var_name].check_open():
-							print("checking")
 							time.sleep(1)
 					#TODO: timeout check
 					pass
@@ -180,9 +179,17 @@ class PlayerDecorator:
 					print("cannot connect all node! reconnecting...")
 					time.sleep(2)
 				#broadcast
-				data = wrap_json(ACTION.OPEN, var_name, get_var_pool()[var_name].deserialization())
+				data = wrap_json(ACTION.OPEN, var_name, get_var_pool()[var_name])
 				get_net_pool().broadcast(data)
 				#player run open
+				if re.match("\[.*\]", var_name):
+					while not get_var_pool()[var_name][0].check_open():
+						time.sleep(1)
+				else:
+					while not get_var_pool()[var_name].check_open():
+						time.sleep(1)
+				#TODO: timeout check
+				pass
 				return func(*args, **kwargs)
 		return wrapper
 

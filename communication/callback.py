@@ -18,7 +18,6 @@ import re
 
 '''
 def reveal(data):
-	print("dealing")
 	if "key" not in data:
 		raise KeyError("no key in json!")
 	if "value" not in data:
@@ -27,6 +26,7 @@ def reveal(data):
 	key = data["key"]
 	value = data["value"]
 	myPool = get_pool()
+	
 	# TODO : filter for selization tensor
 	if re.match("\[.*\]", key) != None:
 		if len(myPool[key]) != len(value):
@@ -75,15 +75,12 @@ class CallBack:
 		else:
 			self.dealer = dealer
 	def __call__(self, event, main_node, connected_node, data):
-		try:
-			if event != 'node_request_to_stop': 
-				if __debug__:
-					print('Event: {} from main node {}: connected node {}: {}'.format(event, main_node.id, connected_node.id, data))
-			if data != None and data != {}:
-				self.dealer(data)
+		if event != 'node_request_to_stop': 
+			if __debug__:
+				print('Event: {} from main node {}: connected node {}: {}'.format(event, main_node.id, connected_node.id, data))
+		if data != None and data != {}:
+			self.dealer(data)
 
-		except Exception as e:
-			print(e)
 
 
 

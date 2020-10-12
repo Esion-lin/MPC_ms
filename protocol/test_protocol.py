@@ -7,37 +7,36 @@ class Protocol:
 	dispatch function:
 	IntTensor -> (IntTensor, [IntTensor])
 	'''
-	@staticmethod
-	def dispatch(value:IntTensor):
+	@classmethod
+	def dispatch(cls, value:IntTensor):
 		value0 = IntTensor(Factory.get_uniform(value.shape), internal = True)
 		value1 = IntTensor(Factory.get_uniform(value.shape), internal = True)
 		#TODO module addition 
 		value2 = value - value0 - value1
 		return (value0, [value1, value2])
 
-	@staticmethod
-	def check_open(share0, share1):
+	@classmethod
+	def check_open(cls, share0, share1):
 		if not share0 is None and len(share1) == 2:
 			return True
 		else:
-			print("share0 is None" if share0 is None else len(share1))
 			return False
 
-	@staticmethod
-	def composite(share0, share1):
+	@classmethod
+	def composite(cls, share0, share1):
 		value = share0 + share1[0] + share1[1]
 		return value
 
-	@staticmethod
-	def triple(shape:list):
+	@classmethod
+	def triple(cls, shape:list):
 		a = IntTensor(Factory.get_uniform(shape), internal = True)
 		b = IntTensor(Factory.get_uniform(shape), internal = True)
 		c = a * b
 		return [a,b,c]
 
 
-	@staticmethod
-	def open_with_player(player_name,var_name):
+	@classmethod
+	def open_with_player(cls, player_name,var_name):
 		from common.wrap_function import get_global_deco
 		dec = get_global_deco()
 		if isinstance(var_name, Placeholder):
@@ -47,8 +46,8 @@ class Protocol:
 			return get_var_pool()[var_name].open()
 		return open()
 
-	@staticmethod
-	def input_with_player(player_name,var_name, ptensor):
+	@classmethod
+	def input_with_player(cls, player_name,var_name, ptensor):
 		from common.wrap_function import get_global_deco
 		dec = get_global_deco()
 		@dec.to_(player_name = player_name, var_name = var_name)
@@ -57,20 +56,20 @@ class Protocol:
 			return ptensor.share()
 		return input()
 
-	@staticmethod
-	def make_triples(triples_name = "", maked_player = "", triples_shape = [1,1,1]):
+	@classmethod
+	def make_triples(cls, triples_name = "", maked_player = "", triples_shape = [1,1,1]):
 		from common.wrap_function import get_global_deco
 		dec = get_global_deco()
 		@dec.to_(player_name = maked_player, var_name = triples_name)
 		def triples(shape):
 			from protocol.test_protocol import Protocol
 			from common.tensor import PrivateTensor
-			tmp = [PrivateTensor(tensor = i, shared = True) for i in Protocol.triple(shape)]
+			tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple(shape)]
 			get_var_pool()[var_name] = tmp
 			return list(zip(*[ele.share() for ele in tmp]))
 		return triples(triples_shape)
-	@staticmethod
-	def Add(x:Placeholder,y:Placeholder,z:Placeholder = None):
+	@classmethod
+	def Add(cls, x:Placeholder,y:Placeholder,z:Placeholder = None):
 		assert x.check() and y.check()
 		if x.shape != y.shape:
 			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
@@ -82,13 +81,15 @@ class Protocol:
 		z.inject()
 		# fluent interface
 		return z
-	@staticmethod
-	def Mul(x:Placeholder,y:Placeholder,z:Placeholder, triple = None):
+	@classmethod
+	def Mul(cls, x:Placeholder,y:Placeholder,z:Placeholder, triple = None):
 		if x.check() and y.check():
+			print("starting mul, shape is {}".format(x.shape))
 			if x.shape != y.shape:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
-				triple = make_triples(triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
+				#测试用例， 需要讨论生成的用户要求
+				triple = cls.make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shape = x.shape)
 				
 				#需要生成triples
 			else:
@@ -106,24 +107,25 @@ class Protocol:
 			beta = y_0 - b
 			Placeholder.register(alpha,"alpha")
 			Placeholder.register(beta,"beta")
-			Alpha = open_with_player(player_name = "", var_name = "alpha")
-			Beta = open_with_player(player_name = "", var_name = "beta")
+			Alpha = cls.open_with_player(player_name = "", var_name = "alpha")
+			
+			Beta = cls.open_with_player(player_name = "", var_name = "beta")
 			#Todo:实现PlaceHolder
 			z.set_value(Alpha*Beta + b*Alpha + a*Beta - c)
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface
 		return z
-	@staticmethod
-	def Conv2d(x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
+	@classmethod
+	def Conv2d(cls, x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
 		'''
 		w*x ->  y
 		使用tensor明文下的卷积操作构建协议的卷积
 		'''
 		# fluent interface
 		return y
-	@staticmethod
-	def square(x:Placeholder, y:Placeholder, triple = None):
+	@classmethod
+	def square(cls, x:Placeholder, y:Placeholder, triple = None):
 		if x.check():
 			if triple == None:
 				triple = make_triples(triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
@@ -131,8 +133,8 @@ class Protocol:
 			pass
 		else:
 			raise NameError("Uninitialized placeholder!!")
-	@staticmethod
-	def relu(x:Placeholder):
+	@classmethod
+	def relu(cls, x:Placeholder):
 		w0 = 0.44015372000819103
 		w1 = 0.500000000
 		w2 = 0.11217537671414643
@@ -143,12 +145,13 @@ class Protocol:
 		pass
 		return x
 
-	@staticmethod
-	def avgpool2d(x, pool_size, strides, padding):
+	@classmethod
+	def avgpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现平均池化
 		pass
 		return x
-	def maxpool2d(x, pool_size, strides, padding):
+	@classmethod
+	def maxpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现最大池化
 		pass
 		return x

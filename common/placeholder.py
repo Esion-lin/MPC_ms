@@ -3,15 +3,36 @@ import time
 import re
 
 class Placeholder:
+	'''
+	#### 同步
+	需要做到和变量池的状态同步，会出现3种情况
+	1. 未初始化的Placeholder，而变量还未由用户输入
+	2. 变量已经由用户输入，Placeholder未定义
+	3. 初始化的Placeholder， 变量已经填入
+	4. 未初始化的Placeholder，而变量已经由用户输入
+	#### API
+	fill(): 查询变量池，将对应的数据填入Placeholder
+	inject(): 将Placeholder的内容填充到变量池
+	set_value(ptensor): 使用ptensor设置Placeholder的内容
+	
+	'''
 	def __init__(self, name, shape = None):
+		self.is_fill = False
 		self.name = name
 		self.shape = shape
 		self.is_list = True if re.match("\[.*\]", name) else False 
+		# 如果该变量已经在变量池中，则直接填入。
+		if self.check():
+			self.fill()
+		
 
 	def fill(self):
+		if self.is_fill:
+			return self.value
 		while not self.check():
 			time.sleep(1)
 		self.value = get_var_pool()[self.name]
+		self.is_fill = True
 		if self.is_list ^ isinstance(self.value,list):
 			raise TypeError("except type {}, but got {}!".format("list" if self.is_list else "PrivateTensor", self.value))
 		if self.shape != None:
@@ -42,9 +63,18 @@ class Placeholder:
 			return 1
 		else:
 			return len(self.value)
-	def set_value(self, ptensor):
+	def set_value(self, ptensor, force_sys = False):
 		self.value = ptensor
 		self.shape = ptensor.shape
+		self.is_fill = True
+		if force_sys:
+			self.inject()
+		else:
+			if self.check():
+				raise RuntimeError("The variable exists in the variable pool and cannot be set!")
+			else:
+				self.inject()
+			
 
 
 	def __iter__(self):
@@ -68,4 +98,8 @@ class Placeholder:
 		get_var_pool()[self.name] = self.value
 
 	def erase(self):
-		del get_var_pool()[name]
+		if name in get_var_pool():
+			del get_var_pool()[name]
+		del self
+		return None
+		

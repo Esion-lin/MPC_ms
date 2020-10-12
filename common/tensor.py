@@ -122,15 +122,12 @@ class PrivateTensor:
 				self.__value, self.__store_value = kwargs["dispatch"](self.tensor)
 
 		else:
-
 			if "tensor" not in kwargs:
 				raise NameError("need keyword tensor!")
-
 			self.__value = self.check_tensor(kwargs)
 			self.__store_value = []
 			#public -> private
 		self.shape = self.__value.shape
-
 	def check_tensor(self, dictory):
 		tensor = dictory["tensor"]
 		if isinstance(tensor, Tensor) or isinstance(tensor, list):
@@ -178,6 +175,7 @@ class PrivateTensor:
 
 	def add_value(self, value):
 		self.__store_value.append(value)
+		
 
 	def open(self, composite = None):
 		if isinstance(self.__store_value[0], PrivateTensor):

@@ -69,7 +69,15 @@ def main(argv):
 	y = input("y")
 	y.fill()
 	from protocol.test_protocol import Protocol
-	Protocol.Add(x,y)
+	from common.placeholder import Placeholder
+	# res = Placeholder("res")
+	# Protocol.Add(x,y,res)
+	# ans = Protocol.open_with_player("Emme", "res")
+	# print("None" if ans is None else ans.to_native())
+	res2 = Placeholder("res2")
+	Protocol.Mul(x,y,res2)
+	ans = Protocol.open_with_player("Emme", "res2")
+	print("None" if ans is None else ans.to_native())
 	#test triple
 	Protocol.make_triples("[tmp]","Emme", [3,3,3])
 	print(get_var_pool()["[tmp]"])
@@ -90,9 +98,7 @@ def main(argv):
 			return tmp
 	testNet(x)		
 	'''
-	from protocol.test_protocol import Protocol
-	print(Protocol.open_with_player("Emme", "z").to_native())
-	
+
 	#test triple
 	# triples([1,1,3])
 	# check()
