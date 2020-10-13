@@ -5,6 +5,7 @@ from communication import CallBack
 from communication.callback import Dealer
 from common.var_pool import get_pool as get_var_pool 
 from nn.layer.conv import Conv
+from common.tensor import PrivateTensor,IntTensor
 import sys
 def main(argv):
 	config = Config(filename = "./config")
@@ -22,12 +23,9 @@ def main(argv):
 	def mul():
 		print("test")
 
-	def input(name):
+	def input(name, jtensor):
 		from protocol.test_protocol import Protocol
-		
-		from common.tensor import PrivateTensor,IntTensor
-
-		ptensor = PrivateTensor(shared = True, tensor = IntTensor([998,1234,9.88]))
+		ptensor = PrivateTensor(shared = True, tensor = jtensor)
 		return Protocol.input_with_player("Bob", name, ptensor)
 
 	@myDecorator.open_(player_name = "Emme", var_name = "x")
@@ -55,18 +53,18 @@ def main(argv):
 		else:
 			print("{} != {}".format(a * b,c))
 	
-	@myDecorator.open_(player_name = "Emme", var_name = "[x]")
+	@myDecorator.open_(player_name = "Emme", var_name = "[tmp]")
 	def check2():
-		a,b,c = [ele.open() for ele in get_var_pool()["[x]"]]
+		a,b,c = [ele.open() for ele in get_var_pool()["[tmp]"]]
 		#print("get [{},{},{}]".format(a,b,c))
 		if a * b == c:
-			print("work well")
+			print("triples work well")
 		else:
 			print("{} != {}".format(a * b,c))
 	'''test input and open'''
-	x = input("x")
+	x = input("x", IntTensor([0.1,0.34,0.088]))
 	x.fill()
-	y = input("y")
+	y = input("y", IntTensor([0.1,0.2,0.1]))
 	y.fill()
 	from protocol.test_protocol import Protocol
 	from common.placeholder import Placeholder
@@ -77,11 +75,10 @@ def main(argv):
 	res2 = Placeholder("res2")
 	Protocol.Mul(x,y,res2)
 	ans = Protocol.open_with_player("Emme", "res2")
-	print("None" if ans is None else ans.to_native())
+	print("None" if ans is None else "mul res is {}".format(ans))
 	#test triple
-	Protocol.make_triples("[tmp]","Emme", [3,3,3])
-	print(get_var_pool()["[tmp]"])
-	
+	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
+	#check2()
 
 	'''
 	from nn.pcell import PrivateCell

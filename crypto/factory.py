@@ -16,7 +16,7 @@ class Encode:
 
 	def module(self):
 		return 2**(self.frac_precision + self.int_precision)
-encodeFP32 = Encode(14,16)
+encodeFP32 = Encode(12,12)
 
 
 class Factory:

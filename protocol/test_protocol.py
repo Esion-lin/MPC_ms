@@ -1,5 +1,6 @@
 from crypto import Factory
-from common.tensor import IntTensor
+from crypto.factory import encodeFP32
+from common.tensor import IntTensor, PrivateTensor
 from common.placeholder import Placeholder
 from common.var_pool import get_pool as get_var_pool 
 class Protocol:
@@ -17,7 +18,7 @@ class Protocol:
 
 	@classmethod
 	def check_open(cls, share0, share1):
-		if not share0 is None and len(share1) == 2:
+		if not share0 is None and len(share1) >= 2:
 			return True
 		else:
 			return False
@@ -82,13 +83,28 @@ class Protocol:
 		# fluent interface
 		return z
 	@classmethod
+	def Add_cons(cls, x, y):
+		from common.wrap_function import get_global_deco
+		dec = get_global_deco()
+		@dec.from_(player_name = "Emme")
+		def add(input_x, input_y):
+			if isinstance(input_x, Placeholder):
+				input_x.value = input_x.value + input_y
+				input_x.inject()
+			elif isinstance(input_x, PrivateTensor):
+				input_x = input_x + input_y
+			return input_x
+		ans = add(x, y)
+		return x if ans is None else ans 
+
+	@classmethod
 	def Mul(cls, x:Placeholder,y:Placeholder,z:Placeholder, triple = None):
 		if x.check() and y.check():
 			print("starting mul, shape is {}".format(x.shape))
 			if x.shape != y.shape:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
-				#测试用例， 需要讨论生成的用户要求
+				#测试用例， 需要讨论是否指定生成的用户
 				triple = cls.make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shape = x.shape)
 				
 				#需要生成triples
@@ -101,6 +117,17 @@ class Protocol:
 			a = triple[0]
 			b = triple[1]
 			c = triple[2]
+			# from common.wrap_function import get_global_deco
+			# dec = get_global_deco()
+			# @dec.open_(player_name = "", var_name = "[tmp]")
+			# def check():
+			# 	aa,bb,cc = [ele.open() for ele in get_var_pool()["[tmp]"]]
+			# 	#print("get [{},{},{}]".format(a,b,c))
+			# 	if aa * bb == cc:
+			# 		print("triples work well {} * {} == {}".format(aa, bb,cc))
+			# 	else:
+			# 		print("{} != {}".format(aa * bb,cc))
+			# check()
 			x_0 = x.fill()
 			y_0 = y.fill()
 			alpha = x_0 - a
@@ -108,10 +135,19 @@ class Protocol:
 			Placeholder.register(alpha,"alpha")
 			Placeholder.register(beta,"beta")
 			Alpha = cls.open_with_player(player_name = "", var_name = "alpha")
-			
 			Beta = cls.open_with_player(player_name = "", var_name = "beta")
+			# print("Alpha is {}".format(Alpha),"Beta is {}".format(Beta), "sadfa is {}".format(-(Alpha*Beta)))
+
+			# xxxx = cls.open_with_player(player_name = "Emme", var_name = "x")
+			# yyyy = cls.open_with_player(player_name = "Emme", var_name = "y")
+			# Placeholder.register(y_0*Alpha + x_0*Beta,"kkk")
+			# Placeholder.register(x_0*Beta,"ddd")
+			# kkk = cls.open_with_player(player_name = "Emme", var_name = "kkk")
+			# ddd = cls.open_with_player(player_name = "Emme", var_name = "ddd")
+			# print("x is {}".format(xxxx),"y is {}".format(yyyy))
+			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
 			#Todo:实现PlaceHolder
-			z.set_value(Alpha*Beta + b*Alpha + a*Beta - c)
+			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) / encodeFP32.scale_size())
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface

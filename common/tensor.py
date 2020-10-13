@@ -47,15 +47,23 @@ class IntTensor:
 
 	def __mul__(self, other):
 		if isinstance(other, int):
-			return IntTensor(self.value.asnumpy() * other % encodeFP32.module(), internal = True)
+			return IntTensor((self.value.asnumpy() * other) % encodeFP32.module(), internal = True)
 		else:
-			return IntTensor((self.mul(self.value, other.value)).asnumpy() / encodeFP32.scale_size() % encodeFP32.module(),internal = True) 
+			ans = IntTensor((self.mul(self.value, other.value)).asnumpy()  % encodeFP32.module(),internal = True) 
+			return ans
 
-	def __div__(self, other):
-		return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True) 
+	def __truediv__(self, other):
+		if isinstance(other, IntTensor):
+			return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True) 
+		elif isinstance(other, int):
+			return IntTensor(self.value.asnumpy() / other,internal = True)
+
 	def __eq__(self, other):
 		return (self.value.asnumpy() == other.value.asnumpy()).all()
-
+	
+	def __neg__(self):
+		return IntTensor(-self.value.asnumpy() % encodeFP32.module(),internal = True)
+	
 	def deserialization(self):
 		return self.value.asnumpy().tolist()
 	
@@ -69,7 +77,7 @@ class IntTensor:
 		fluent interface
 		'''
 		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
-		self.value = Tensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) / encodeFP32.scale_size() % encodeFP32.module(), dtype = mindspore.int32)
+		self.value = Tensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), dtype = mindspore.int32)
 		return self
 	def im2col(self, h, w, padding, stride):
 		'''
@@ -108,7 +116,7 @@ class PrivateTensor:
 			self.protocol = kwargs["protocol"]
 		else:
 			if __debug__:
-				print("use default protocol")
+				pass#print("use default protocol")
 			from protocol.test_protocol import Protocol
 			self.protocol = Protocol
 		if "shared" in kwargs:
@@ -205,7 +213,7 @@ class PrivateTensor:
 		elif isinstance(other, int):
 			pass
 		elif isinstance(other, IntTensor):
-			return PrivateTensor(tensor = self.__value + othe)
+			return PrivateTensor(tensor = self.__value + other)
 
 
 	def __sub__(self, other):
@@ -214,7 +222,7 @@ class PrivateTensor:
 		elif isinstance(other, int):
 			pass
 		elif isinstance(other, IntTensor):
-			return PrivateTensor(tensor = self.__value - othe)
+			return PrivateTensor(tensor = self.__value - other)
 
 
 	def __mod__(self, other):
@@ -228,6 +236,11 @@ class PrivateTensor:
 		else:
 			raise TypeError("Does not support multiplication of privateTensor and {}".format(type(other)))
 
+	def __truediv__(self, other):
+		if isinstance(other, int):
+			return PrivateTensor(tensor = self.__value / other)
+		elif isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = self.__value / other.convert_public())
 	def __floordiv__(self, other):
 		pass
 

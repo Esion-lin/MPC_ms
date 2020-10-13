@@ -80,7 +80,8 @@ class CallBack:
 	def __call__(self, event, main_node, connected_node, data):
 		if event != 'node_request_to_stop': 
 			if __debug__:
-				print('Event: {} from main node {}: connected node {}: {}'.format(event, main_node.id, connected_node.id, data))
+				pass
+				#print('Event: {} from main node {}: connected node {}: {}'.format(event, main_node.id, connected_node.id, data))
 		if data != None and data != {}:
 			self.dealer(data)
 
