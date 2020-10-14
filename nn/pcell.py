@@ -12,7 +12,7 @@ class PrivateCell(abc.ABC):
 		pass
 		#define env
 	@abstractmethod
-	def construct(self, input):
+	def construct(self, **input_var):
 		#Separate network and graph
 		pass
 

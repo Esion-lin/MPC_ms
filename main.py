@@ -75,7 +75,8 @@ def main(argv):
 	res2 = Placeholder("res2")
 	Protocol.Mul(x,y,res2)
 	ans = Protocol.open_with_player("Emme", "res2")
-	print("None" if ans is None else "mul res is {}".format(ans))
+	from crypto.factory import encodeFP32
+	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test triple
 	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
 	#check2()

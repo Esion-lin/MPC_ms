@@ -30,6 +30,7 @@ class IntTensor:
 		self.mul = P.Mul()
 		self.div = P.FloorDiv()
 		self.matmul = P.MatMul()
+
 	#TODO: 需要添加对其他类型数据计算的重载
 
 	
@@ -73,12 +74,8 @@ class IntTensor:
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
 	def Matmul(self, other):
-		'''
-		fluent interface
-		'''
 		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
-		self.value = Tensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), dtype = mindspore.int32)
-		return self
+		return IntTensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), internal = True)
 	def im2col(self, h, w, padding, stride):
 		'''
 		self -> col
