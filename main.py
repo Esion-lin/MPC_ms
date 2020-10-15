@@ -75,8 +75,17 @@ def main(argv):
 	res2 = Placeholder("res2")
 	Protocol.Mul(x,y,res2)
 	ans = Protocol.open_with_player("Emme", "res2")
-	from crypto.factory import encodeFP32
 	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
+	#test conv
+	w = input("w", IntTensor([[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]]]))
+	image = input("image", IntTensor([[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
+										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
+										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]]]))
+	from protocol.test_protocol import Conv2d
+	conv = Conv2d(3,1,1,1)
+	res = Placeholder("res")
+	conv(x = image, y = w, z = res)
+	ans = Protocol.open_with_player("Emme", "res")
 	#test triple
 	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
 	#check2()

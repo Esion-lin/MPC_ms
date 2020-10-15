@@ -220,7 +220,10 @@ class Conv2d(PrivateCell):
 	使用tensor明文下的卷积操作构建协议的卷积
 	'''
 	def __init__(self, in_channels, out_channels, stride, padding):
-		pass
+		self.in_channels = in_channels
+		self.out_channels = out_channels
+		self.stride = stride
+		self.padding = padding
 	def construct(self,**input_var):
 		x = input_var["x"]
 		y = input_var["y"]
@@ -228,7 +231,7 @@ class Conv2d(PrivateCell):
 		if "triples" in input_var:
 			triples = input_var["triples"]
 		else:
-			triples = cls.make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shapeA = x.shape, triples_shapeB = y.shape)
+			triples = cls.make_mat_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shapeA = x.shape, triples_shapeB = y.shape)
 		a = triples[0]
 		b = triples[1]
 		c = triples[2]
@@ -241,6 +244,7 @@ class Conv2d(PrivateCell):
 		Placeholder.register(beta,"beta")
 		Alpha = cls.open_with_player(player_name = "", var_name = "alpha")
 		Beta = cls.open_with_player(player_name = "", var_name = "beta")
-		b_cov = nn.Conv2d(in_channels, out_channels, Beta.shape,stride,padding = padding, weight_init=Beta.value)
-		y_cov = nn.Conv2d(in_channels, out_channels, Beta.shape,stride,padding = padding, weight_init=y.value)
+		b_cov = nn.Conv2d(self.in_channels, self.out_channels, Beta.shape,self.stride,padding = self.padding, weight_init=Beta.value)
+		y_cov = nn.Conv2d(self.in_channels, self.out_channels, Beta.shape,self.stride,padding = self.padding, weight_init=y.value)
 		z.set_value(cls.Add_cons(y_cov(Alpha) + b_cov(x_0) + c, -(b_cov(Alpha))) / encodeFP32.scale_size())
+		#																			^此处会导致结果出错, 需要使用截断协议

@@ -3,7 +3,7 @@ import mindspore
 import numpy as np
 from crypto.factory import encodeFP32
 from mindspore.ops import operations as P
-
+from mindspore import nn
 class IntTensor:
 	'''
 
@@ -241,5 +241,30 @@ class PrivateTensor:
 	def __floordiv__(self, other):
 		pass
 
+# wrap with Tensor class
+class Conv2d(nn.Conv2d):
+	def __init__(self, *args, **kwargs):
+		self.private = False
+		if isinstance(kwargs["weight_init"], PrivateTensor):
+			kwargs["weight_init"] = kwargs["weight_init"].convert_public().value
+			self.private = True
+		elif isinstance(kwargs["weight_init"], IntTensor):
+			kwargs["weight_init"] = kwargs["weight_init"].value
+		super(Conv2d,self).__init__(*args,**kwargs)
+	def __call__(self. *args):
+		for i in range(len(args)):
+			if isinstance(args[i], PrivateTensor):
+				self.private = True
+				args[i] = args[i].convert_public().value
+			elif isinstance(args[i], IntTensor):
+				args[i] = args[i].value
+		ans = super().__call__(*args)
+		if self.private:
+			return PrivateTensor(tensor = IntTensor(ans, internal = True))
+		else:
+			return IntTensor(ans, internal = True)
 
-	
+
+
+
+
