@@ -192,10 +192,11 @@ class PlayerDecorator:
 				pass
 				return func(*args, **kwargs)
 		return wrapper
-
+__deco__ = None
 def set_global_deco(deco):
 	global __deco__
 	__deco__ = deco
+	print("[wrap_function]:", "init deco success")
 
 def get_global_deco():
 	return __deco__

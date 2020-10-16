@@ -12,7 +12,7 @@ class PrivateCell(abc.ABC):
 		pass
 		#define env
 	@abstractmethod
-	def construct(self, **input_var):
+	def construct(self, *args, **kwargs):
 		#Separate network and graph
 		pass
 
@@ -49,17 +49,17 @@ class PrivateCell(abc.ABC):
 			if name in traits:
 				return traits[name]
 	
-	def __call__(self, *args):
-		self.construct(args)
+	def __call__(self, *args,**kwargs):
+		self.construct(*args, **kwargs)
 	
-	@abstractmethod
-	def get_grad(self, input):
-		pass
+	# @abstractmethod
+	# def get_grad(self, input):
+	# 	pass
 	
-	@abstractmethod
-	def construct_extractor(self):
-		pass
+	# @abstractmethod
+	# def construct_extractor(self):
+	# 	pass
 
-	@abstractmethod
-	def set_weight(self):
-		pass
+	# @abstractmethod
+	# def set_weight(self):
+	# 	pass

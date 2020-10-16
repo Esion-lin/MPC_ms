@@ -76,19 +76,12 @@ class IntTensor:
 	def Matmul(self, other):
 		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
 		return IntTensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), internal = True)
-	def im2col(self, h, w, padding, stride):
-		'''
-		self -> col
-		TODO:返回一个新的展开的IntTensor
-		'''
-		pass 
-
 
 	def Conv(self, filters, stride, padding):
 		'''
-		TODO：使用matmul得到卷积结果的Tensor
 		'''
-		pass
+		cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,padding = padding, weight_init=filters.value)
+		return IntTensor(cov(self.value), internal = True)
 
 
 class PrivateTensor:
@@ -251,7 +244,7 @@ class Conv2d(nn.Conv2d):
 		elif isinstance(kwargs["weight_init"], IntTensor):
 			kwargs["weight_init"] = kwargs["weight_init"].value
 		super(Conv2d,self).__init__(*args,**kwargs)
-	def __call__(self. *args):
+	def __call__(self, *args):
 		for i in range(len(args)):
 			if isinstance(args[i], PrivateTensor):
 				self.private = True
@@ -263,8 +256,3 @@ class Conv2d(nn.Conv2d):
 			return PrivateTensor(tensor = IntTensor(ans, internal = True))
 		else:
 			return IntTensor(ans, internal = True)
-
-
-
-
-

@@ -5,14 +5,17 @@ from common.placeholder import Placeholder
 from common.var_pool import get_pool as get_var_pool 
 from nn.pcell import PrivateCell
 from common.wrap_function import get_global_deco
+from .command_fun import make_triples
 class Protocol:
 	'''
 	dispatch function:
 	IntTensor -> (IntTensor, [IntTensor])
 	'''
-	dec = get_global_deco()
 	@classmethod
 	def dispatch(cls, value:IntTensor):
+		'''
+		该函数返回一个tuple其中第一位为自己持有的share， 第二位list为其他人的share -> （自己的share，[player1的share，player2的share...]）
+		'''
 		value0 = IntTensor(Factory.get_uniform(value.shape), internal = True)
 		value1 = IntTensor(Factory.get_uniform(value.shape), internal = True)
 		#TODO module addition 
@@ -31,67 +34,49 @@ class Protocol:
 		value = share0 + share1[0] + share1[1]
 		return value
 
-	@classmethod
-	def triple(cls, shape:list):
-		a = IntTensor(Factory.get_uniform(shape), internal = True)
-		b = IntTensor(Factory.get_uniform(shape), internal = True)
-		c = a * b
-		return [a,b,c]
 
-	@classmethod
-	def mat_triple(cls, shapeX:list, shapeY:list):
-		def check_mat(shapeA, shapeB):
-			if len(shapeA) != len(shapeB):
-				return False
-			elif shapeA[-1] != shapeA[-2]:
-				return False
-			return True
-		if check_mat(shapeX, shapeY):
-			a = IntTensor(Factory.get_uniform(shapeX), internal = True)
-			b = IntTensor(Factory.get_uniform(shapeY), internal = True)
-			c = a.Matmul(b)
-			return [a,b,c]
-		else:
-			raise TypeError("shapes do not match!")
+	# @classmethod
+	# def open_with_player(cls, player_name,var_name):
+	# 	if isinstance(var_name, Placeholder):
+	# 		var_name = var_name.name
+	# 	dec = get_global_deco()
+	# 	@dec.open_(player_name = player_name, var_name = var_name)
+	# 	def open():
+	# 		return get_var_pool()[var_name].open()
+	# 	return open()
 
-	@classmethod
-	def open_with_player(cls, player_name,var_name):
-		if isinstance(var_name, Placeholder):
-			var_name = var_name.name
-		@cls.dec.open_(player_name = player_name, var_name = var_name)
-		def open():
-			return get_var_pool()[var_name].open()
-		return open()
-
-	@classmethod
-	def input_with_player(cls, player_name,var_name, ptensor):
-		@cls.dec.to_(player_name = player_name, var_name = var_name)
-		def input():
-			get_var_pool()[var_name] = ptensor
-			return ptensor.share()
-		return input()
-
-	@classmethod
-	def make_triples(cls, triples_name = "", maked_player = "", triples_shape = [1,1,1]):
-		@cls.dec.to_(player_name = maked_player, var_name = triples_name)
-		def triples(shape):
-			from protocol.test_protocol import Protocol
-			from common.tensor import PrivateTensor
-			tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple(shape)]
-			get_var_pool()[var_name] = tmp
-			return list(zip(*[ele.share() for ele in tmp]))
-		return triples(triples_shape)
-		
-	@classmethod
-	def make_mat_triples(cls, triples_name = "", maked_player = "", triples_shapeA, triples_shapeB):
-		@cls.dec.to_(player_name = maked_player, var_name = triples_name)
-		def triples(shape_a, shape_b):
-			from protocol.test_protocol import Protocol
-			from common.tensor import PrivateTensor
-			tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.mat_triple(shape_a, shape_b)]
-			get_var_pool()[var_name] = tmp
-			return list(zip(*[ele.share() for ele in tmp]))
-		return triples(triples_shapeA, triples_shapeB)
+	# @classmethod
+	# def input_with_player(cls, player_name,var_name, ptensor):
+	# 	dec = get_global_deco()
+	# 	@dec.to_(player_name = player_name, var_name = var_name)
+	# 	def input():
+	# 		get_var_pool()[var_name] = ptensor
+	# 		return ptensor.share()
+	# 	return input()
+	# 迁移到了command_fun中
+	# @classmethod
+	# def make_triples(cls, triples_name = "", maked_player = "", **kwargs):
+	# 	dec = get_global_deco()
+	# 	@dec.to_(player_name = maked_player, var_name = triples_name)
+	# 	def triples(**kwargs):
+	# 		from protocol.test_protocol import Protocol
+	# 		from common.tensor import PrivateTensor
+	# 		tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple_mn.triple(**kwargs)]
+	# 		get_var_pool()[var_name] = tmp
+	# 		return list(zip(*[ele.share() for ele in tmp]))
+	# 	return triples(**kwargs)
+	#test
+	# @classmethod
+	# def make_mat_triples(cls, triples_name = "", maked_player = "", triples_shapeA = [1,1], triples_shapeB = [1,1]):
+	# 	dec = get_global_deco()
+	# 	@dec.to_(player_name = maked_player, var_name = triples_name)
+	# 	def triples(shape_a, shape_b):
+	# 		from protocol.test_protocol import Protocol
+	# 		from common.tensor import PrivateTensor
+	# 		tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple_mn.mat_triple(shape_a, shape_b)]
+	# 		get_var_pool()[var_name] = tmp
+	# 		return list(zip(*[ele.share() for ele in tmp]))
+	# 	return triples(triples_shapeA, triples_shapeB)
 
 	@classmethod
 	def Add(cls, x:Placeholder,y:Placeholder,z:Placeholder = None):
@@ -108,7 +93,8 @@ class Protocol:
 		return z
 	@classmethod
 	def Add_cons(cls, x, y):
-		@cls.dec.from_(player_name = "Emme")
+		dec = get_global_deco()
+		@dec.from_(player_name = "Emme")
 		def add(input_x, input_y):
 			if isinstance(input_x, Placeholder):
 				input_x.value = input_x.value + input_y
@@ -127,7 +113,7 @@ class Protocol:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
 				#测试用例， 需要讨论是否指定生成的用户
-				triple = cls.make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shape = x.shape)
+				triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shape = x.shape)
 				
 				#需要生成triples
 			else:
@@ -170,7 +156,7 @@ class Protocol:
 			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
 			#Todo:实现PlaceHolder
 			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) / encodeFP32.scale_size())
-			#																	^此处会导致结果出错, 需要使用截断协议
+			#																	^wrap around此处会导致结果出错, 需要使用截断协议trancation
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface
@@ -187,7 +173,7 @@ class Protocol:
 	def square(cls, x:Placeholder, y:Placeholder, triple = None):
 		if x.check():
 			if triple == None:
-				triple = make_triples(triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
+				triple = make_triples(triple_type = "square_triple", triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
 			#TODO 使用squre——triple实现该方法
 			pass
 		else:
@@ -231,7 +217,7 @@ class Conv2d(PrivateCell):
 		if "triples" in input_var:
 			triples = input_var["triples"]
 		else:
-			triples = cls.make_mat_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shapeA = x.shape, triples_shapeB = y.shape)
+			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", triples_shapeA = x.shape, triples_shapeB = y.shape, stride = self.stride, padding = self.padding)
 		a = triples[0]
 		b = triples[1]
 		c = triples[2]
