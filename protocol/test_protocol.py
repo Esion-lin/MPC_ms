@@ -4,8 +4,9 @@ from common.tensor import IntTensor, PrivateTensor
 from common.placeholder import Placeholder
 from common.var_pool import get_pool as get_var_pool 
 from nn.pcell import PrivateCell
+from mindspore import nn
 from common.wrap_function import get_global_deco
-from .command_fun import make_triples
+from .command_fun import * 
 class Protocol:
 	'''
 	dispatch function:
@@ -217,7 +218,7 @@ class Conv2d(PrivateCell):
 		if "triples" in input_var:
 			triples = input_var["triples"]
 		else:
-			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", triples_shapeA = x.shape, triples_shapeB = y.shape, stride = self.stride, padding = self.padding)
+			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
 		a = triples[0]
 		b = triples[1]
 		c = triples[2]
@@ -228,9 +229,7 @@ class Conv2d(PrivateCell):
 		beta = y_0 - b
 		Placeholder.register(alpha,"alpha")
 		Placeholder.register(beta,"beta")
-		Alpha = cls.open_with_player(player_name = "", var_name = "alpha")
-		Beta = cls.open_with_player(player_name = "", var_name = "beta")
-		b_cov = nn.Conv2d(self.in_channels, self.out_channels, Beta.shape,self.stride,padding = self.padding, weight_init=Beta.value)
-		y_cov = nn.Conv2d(self.in_channels, self.out_channels, Beta.shape,self.stride,padding = self.padding, weight_init=y.value)
-		z.set_value(cls.Add_cons(y_cov(Alpha) + b_cov(x_0) + c, -(b_cov(Alpha))) / encodeFP32.scale_size())
+		Alpha = open_with_player(player_name = "", var_name = "alpha")
+		Beta = open_with_player(player_name = "", var_name = "beta")
+		z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
 		#																			^此处会导致结果出错, 需要使用截断协议

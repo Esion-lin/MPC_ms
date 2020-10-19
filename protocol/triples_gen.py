@@ -1,3 +1,5 @@
+from common.tensor import IntTensor
+from crypto import Factory
 class Triple_generator:
 	#乘法triple
 	@classmethod

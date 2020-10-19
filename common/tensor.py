@@ -69,7 +69,7 @@ class IntTensor:
 		return self.value.asnumpy().tolist()
 	
 	def to_native(self):
-		return Tensor(self.value, dtype = mindspore.float32) / encodeFP32.scale_size()
+		return Tensor(self.value, dtype = mindspore.float16) / encodeFP32.scale_size()
 
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
@@ -79,9 +79,16 @@ class IntTensor:
 
 	def Conv(self, filters, stride, padding):
 		'''
+		
 		'''
-		cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,padding = padding, weight_init=filters.value)
-		return IntTensor(cov(self.value), internal = True)
+		if isinstance(filters, PrivateTensor):
+			t_filters = filters.convert_public()
+		else:
+			t_filters = filters
+		cov = nn.Conv2d(self.shape[1], t_filters.shape[-3], t_filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=t_filters.to_native())
+		#																																^需要修改为int
+		return IntTensor(cov(self.to_native()), internal = False)
+		#						^目前不支持整数，需要修改成整数
 
 
 class PrivateTensor:
@@ -233,6 +240,9 @@ class PrivateTensor:
 			return PrivateTensor(tensor = self.__value / other.convert_public())
 	def __floordiv__(self, other):
 		pass
+	
+	def Conv(self, filters, stride, padding):
+		return PrivateTensor(tensor = self.__value.Conv(filters, stride, padding))
 
 # wrap with Tensor class
 class Conv2d(nn.Conv2d):

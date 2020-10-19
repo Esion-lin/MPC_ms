@@ -1,6 +1,8 @@
 from common.var_pool import get_pool as get_var_pool 
 from common.wrap_function import get_global_deco
 from .triples_gen import Triple_generator
+from common.tensor import IntTensor, PrivateTensor
+from common.placeholder import Placeholder
 def open_with_player(player_name,var_name):
 	if isinstance(var_name, Placeholder):
 		var_name = var_name.name
@@ -23,7 +25,7 @@ triple_select = {
     "conv_triple": Triple_generator.conv_triple,
     "square_triple": Triple_generator.square_triple,
 }
-def make_triples(cls, triple_type = "triple", triples_name = "", maked_player = "", **kwargs):
+def make_triples(triple_type = "triple", triples_name = "", maked_player = "", **kwargs):
 	dec = get_global_deco()
 	@dec.to_(player_name = maked_player, var_name = triples_name)
 	def triples(**kwargs):

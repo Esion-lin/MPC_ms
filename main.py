@@ -8,6 +8,7 @@ from nn.layer.conv import Conv
 from common.tensor import PrivateTensor,IntTensor
 import sys
 from protocol.test_protocol import Protocol
+from protocol.command_fun import *
 from common.placeholder import Placeholder
 def main(argv):
 	config = Config(filename = "./config")
@@ -26,9 +27,8 @@ def main(argv):
 		print("test")
 
 	def input(name, jtensor):
-		from protocol.test_protocol import Protocol
 		ptensor = PrivateTensor(shared = True, tensor = jtensor)
-		return Protocol.input_with_player("Bob", name, ptensor)
+		return input_with_player("Bob", name, ptensor)
 
 	@myDecorator.open_(player_name = "Emme", var_name = "x")
 	def open():
@@ -77,7 +77,7 @@ def main(argv):
 	# ans = Protocol.open_with_player("Emme", "res2")
 	# print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test conv
-	w = input("w", IntTensor([[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]]]))
+	w = input("w", IntTensor([[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]],[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]],[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]]]))
 	image = input("image", IntTensor([[[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
 										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
 										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]]]]))
@@ -85,7 +85,8 @@ def main(argv):
 	conv = Conv2d(3,1,1,1)
 	res = Placeholder("res")
 	conv(x = image, y = w, z = res)
-	ans = Protocol.open_with_player("Emme", "res")
+	ans = open_with_player("Emme", "res")
+	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test triple
 	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
 	#check2()
