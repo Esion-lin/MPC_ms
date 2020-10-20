@@ -7,11 +7,48 @@ from nn.pcell import PrivateCell
 from mindspore import nn
 from common.wrap_function import get_global_deco
 from .command_fun import * 
+
+class Conv2d(PrivateCell):
+	'''
+	w*x ->  y
+	使用tensor明文下的卷积操作构建协议的卷积
+	TODO:添加 channel检查的逻辑 
+	'''
+	def __init__(self, stride, padding):
+		self.stride = stride
+		self.padding = padding
+	def construct(self,**input_var):
+		x = input_var["x"]
+		y = input_var["y"]
+		z = input_var["z"]
+		if "triples" in input_var:
+			triples = input_var["triples"]
+		else:
+			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
+		a = triples[0]
+		b = triples[1]
+		c = triples[2]
+		#获得privateTensor
+		x_0 = x.fill()
+		y_0 = y.fill()
+		alpha = x_0 - a
+		beta = y_0 - b
+		Placeholder.register(alpha,"alpha")
+		Placeholder.register(beta,"beta")
+		Alpha = open_with_player(player_name = "", var_name = "alpha")
+		Beta = open_with_player(player_name = "", var_name = "beta")
+		z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
+		#																			^此处会导致结果出错, 需要使用截断协议
+	def set_weight(self):
+		raise NotImplementedError("试图调用未定义的方法")
 class Protocol:
 	'''
 	dispatch function:
 	IntTensor -> (IntTensor, [IntTensor])
 	'''
+	nn = {
+		"conv":Conv2d,
+	}
 	@classmethod
 	def dispatch(cls, value:IntTensor):
 		'''
@@ -105,7 +142,7 @@ class Protocol:
 		return x if ans is None else ans 
 
 	@classmethod
-	def Mul(cls, x:Placeholder,y:Placeholder,z:Placeholder, triple = None):
+	def Mul(cls, x:Placeholder,y:Placeholder,z:Placeholder, triple = None, with_trunc = True):
 		if x.check() and y.check():
 			print("starting mul, shape is {}".format(x.shape))
 			if x.shape != y.shape:
@@ -155,7 +192,8 @@ class Protocol:
 			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
 			#Todo:实现PlaceHolder
 			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) )
-			cls.truncate(x = z, d = encodeFP32.scale_size())
+			if with_trunc:
+				cls.truncate(x = z, d = encodeFP32.scale_size())
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface
@@ -216,35 +254,4 @@ class Protocol:
 	def maxpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现最大池化
 		pass
-class Conv2d(PrivateCell):
-	'''
-	w*x ->  y
-	使用tensor明文下的卷积操作构建协议的卷积
-	'''
-	def __init__(self, in_channels, out_channels, stride, padding):
-		self.in_channels = in_channels
-		self.out_channels = out_channels
-		self.stride = stride
-		self.padding = padding
-	def construct(self,**input_var):
-		x = input_var["x"]
-		y = input_var["y"]
-		z = input_var["z"]
-		if "triples" in input_var:
-			triples = input_var["triples"]
-		else:
-			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
-		a = triples[0]
-		b = triples[1]
-		c = triples[2]
-		#获得privateTensor
-		x_0 = x.fill()
-		y_0 = y.fill()
-		alpha = x_0 - a
-		beta = y_0 - b
-		Placeholder.register(alpha,"alpha")
-		Placeholder.register(beta,"beta")
-		Alpha = open_with_player(player_name = "", var_name = "alpha")
-		Beta = open_with_player(player_name = "", var_name = "beta")
-		z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
-		#																			^此处会导致结果出错, 需要使用截断协议
+

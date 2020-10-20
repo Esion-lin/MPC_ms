@@ -60,6 +60,6 @@ class PrivateCell(abc.ABC):
 	# def construct_extractor(self):
 	# 	pass
 
-	# @abstractmethod
-	# def set_weight(self):
-	# 	pass
+	@abstractmethod
+	def set_weight(self):
+		pass
