@@ -64,29 +64,32 @@ def main(argv):
 		else:
 			print("{} != {}".format(a * b,c))
 	'''test input and open'''
-	# x = input("x", IntTensor([0.1,0.34,0.088]))
-	# x.fill()
-	# y = input("y", IntTensor([0.1,0.2,0.1]))
-	# y.fill()
+	x = input("x", IntTensor([0.1,0.34,0.088]))
+	x.fill()
+	y = input("y", IntTensor([0.1,0.2,0.1]))
+	y.fill()
 	# res = Placeholder("res")
 	# Protocol.Add(x,y,res)
 	# ans = Protocol.open_with_player("Emme", "res")
 	# print("None" if ans is None else ans.to_native())
-	# res2 = Placeholder("res2")
-	# Protocol.Mul(x,y,res2)
-	# ans = Protocol.open_with_player("Emme", "res2")
-	# print("None" if ans is None else "mul res is {}".format(ans.to_native()))
+	res2 = Placeholder("res2")
+	Protocol.Mul(x,y,res2)
+	print("get ans")
+	ans = open_with_player("Bob", "res2")
+	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test conv
-	w = input("w", IntTensor([[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]],[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]],[[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]],[[0.1,0.34],[2.11,3.2]]]]))
-	image = input("image", IntTensor([[[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
-										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]],
-										[[0.1,0.34,0.123],[2.11,3.2,2.11],[2.11,3.2,2.11]]]]))
+	'''
+	w = input("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
+	image = input("image", IntTensor([[[[1,1,1],[1,1,1],[1,1,1]],
+										[[1,1,1],[1,1,1],[1,1,1]],
+										[[1,1,1],[1,1,1],[1,1,1]]]]))
 	from protocol.test_protocol import Conv2d
-	conv = Conv2d(3,1,1,1)
+	conv = Conv2d(3,1,1,0)
 	res = Placeholder("res")
 	conv(x = image, y = w, z = res)
 	ans = open_with_player("Emme", "res")
 	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
+	'''
 	#test triple
 	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
 	#check2()

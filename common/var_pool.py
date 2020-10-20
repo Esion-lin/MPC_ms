@@ -72,7 +72,7 @@ class VarPool:
 	def __delitem__(self, key):
 		if self.check_key(key):
 			del self.tm[key]
-		del self.value[key]
+		del self.tm[key]
 
 
 

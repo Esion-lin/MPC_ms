@@ -24,6 +24,7 @@ triple_select = {
     "mat_triple": Triple_generator.mat_triple,
     "conv_triple": Triple_generator.conv_triple,
     "square_triple": Triple_generator.square_triple,
+	"trunc_triple":Triple_generator.trunc_triple,
 }
 def make_triples(triple_type = "triple", triples_name = "", maked_player = "", **kwargs):
 	dec = get_global_deco()

@@ -7,10 +7,10 @@ import numpy as np
 
 
 class Encode:
-	def __init__(self, int_precision: int, frac_precision: int):
+	def __init__(self, int_precision: int, frac_precision: int, base = 2):
 		self.int_precision = int_precision
 		self.frac_precision = frac_precision
-
+		self.base = base
 	def scale_size(self):
 		return 2**self.frac_precision
 

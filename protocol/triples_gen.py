@@ -1,5 +1,5 @@
 from common.tensor import IntTensor
-from crypto import Factory
+from crypto import Factory,encodeFP32
 class Triple_generator:
 	#乘法triple
 	@classmethod
@@ -36,3 +36,9 @@ class Triple_generator:
 		a = IntTensor(Factory.get_uniform(shape), internal = True)
 		b = a*a
 		return [a, b]
+	#truncation triple
+	@classmethod
+	def trunc_triple(cls, shape, d):
+		a = IntTensor(Factory.get_uniform(shape), internal = True)
+		b = a / d
+		return [a,b]

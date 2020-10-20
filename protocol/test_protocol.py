@@ -75,12 +75,10 @@ class Protocol:
 	# 		from protocol.test_protocol import Protocol
 	# 		from common.tensor import PrivateTensor
 	# 		tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple_mn.mat_triple(shape_a, shape_b)]
-	# 		get_var_pool()[var_name] = tmp
-	# 		return list(zip(*[ele.share() for ele in tmp]))
-	# 	return triples(triples_shapeA, triples_shapeB)
-
-	@classmethod
-	def Add(cls, x:Placeholder,y:Placeholder,z:Placeholder = None):
+	# 		get_var_pool()[var_ele.share() for ele in tmp]))
+	# 	return triples(**kwargs)
+	#test
+	# @classmethody:Placeholder,z:Placeholder = None):
 		assert x.check() and y.check()
 		if x.shape != y.shape:
 			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
@@ -114,7 +112,7 @@ class Protocol:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
 				#测试用例， 需要讨论是否指定生成的用户
-				triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", triples_shape = x.shape)
+				triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
 				
 				#需要生成triples
 			else:
@@ -143,8 +141,8 @@ class Protocol:
 			beta = y_0 - b
 			Placeholder.register(alpha,"alpha")
 			Placeholder.register(beta,"beta")
-			Alpha = cls.open_with_player(player_name = "", var_name = "alpha")
-			Beta = cls.open_with_player(player_name = "", var_name = "beta")
+			Alpha = open_with_player(player_name = "", var_name = "alpha")
+			Beta = open_with_player(player_name = "", var_name = "beta")
 			# print("Alpha is {}".format(Alpha),"Beta is {}".format(Beta), "sadfa is {}".format(-(Alpha*Beta)))
 
 			# xxxx = cls.open_with_player(player_name = "Emme", var_name = "x")
@@ -156,8 +154,10 @@ class Protocol:
 			# print("x is {}".format(xxxx),"y is {}".format(yyyy))
 			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
 			#Todo:实现PlaceHolder
-			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) / encodeFP32.scale_size())
-			#																	^wrap around此处会导致结果出错, 需要使用截断协议trancation
+			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) )
+			del get_var_pool()["alpha"]
+			del get_var_pool()["beta"]
+			cls.truncate(x = z, d = encodeFP32.scale_size())
 		else:
 			raise NameError("Uninitialized placeholder!!")
 		# fluent interface
@@ -180,6 +180,25 @@ class Protocol:
 		else:
 			raise NameError("Uninitialized placeholder!!")
 	@classmethod
+	def truncate(cls, x:Placeholder, d,y = None, triple = None):
+		if triple is None:
+			triple = make_triples(triple_type = "trunc_triple",triples_name = "[tmp]", maked_player = "Emme", shape = x.shape, d = d)
+			#																		^just for test
+		a = triple[0]
+		b = triple[1]
+		x_0 = x.fill()
+		alpha = x_0 - a
+		Placeholder.register(alpha,"alpha")
+		print("now open")
+		Alpha = open_with_player(player_name = "", var_name = "alpha")
+		print("open succe")
+		if y is None:
+			x.set_value(cls.Add_cons(b, Alpha/d), force_sys = True)
+			return x
+		else:
+			y.set_value(cls.Add_cons(b, Alpha/d))
+			return y
+	@classmethod
 	def relu(cls, x:Placeholder):
 		w0 = 0.44015372000819103
 		w1 = 0.500000000
@@ -187,6 +206,7 @@ class Protocol:
 		w4 = -0.0013660836712429923
 		w6 = 9.009136367360004e-06
 		w8 = -2.1097433984e-08
+
 		#TODO 计算多项式，高次项如何展开有待商榷
 		pass
 		return x
@@ -200,7 +220,6 @@ class Protocol:
 	def maxpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现最大池化
 		pass
-		return x
 class Conv2d(PrivateCell):
 	'''
 	w*x ->  y
