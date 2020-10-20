@@ -75,7 +75,7 @@ def main(argv):
 	res2 = Placeholder("res2")
 	Protocol.Mul(x,y,res2)
 	print("get ans")
-	ans = open_with_player("Bob", "res2")
+	ans = open_with_player("Emme", "res2")
 	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test conv
 	'''

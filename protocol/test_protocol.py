@@ -155,8 +155,6 @@ class Protocol:
 			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
 			#Todo:实现PlaceHolder
 			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) )
-			del get_var_pool()["alpha"]
-			del get_var_pool()["beta"]
 			cls.truncate(x = z, d = encodeFP32.scale_size())
 		else:
 			raise NameError("Uninitialized placeholder!!")
@@ -182,16 +180,14 @@ class Protocol:
 	@classmethod
 	def truncate(cls, x:Placeholder, d,y = None, triple = None):
 		if triple is None:
-			triple = make_triples(triple_type = "trunc_triple",triples_name = "[tmp]", maked_player = "Emme", shape = x.shape, d = d)
+			triple = make_triples(triple_type = "trunc_triple",triples_name = "[tmp2]", maked_player = "Emme", shape = x.shape, d = d)
 			#																		^just for test
 		a = triple[0]
 		b = triple[1]
 		x_0 = x.fill()
 		alpha = x_0 - a
-		Placeholder.register(alpha,"alpha")
-		print("now open")
-		Alpha = open_with_player(player_name = "", var_name = "alpha")
-		print("open succe")
+		Placeholder.register(alpha,"alpha2")
+		Alpha = open_with_player(player_name = "", var_name = "alpha2")
 		if y is None:
 			x.set_value(cls.Add_cons(b, Alpha/d), force_sys = True)
 			return x

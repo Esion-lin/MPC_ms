@@ -95,7 +95,10 @@ class Placeholder:
 		get_var_pool()[name] = variable
 	
 	def inject(self):
-		get_var_pool()[self.name] = self.value
+		if self.name in get_var_pool():
+			get_var_pool()[self.name].set_value(self.value.convert_public())
+		else:
+			get_var_pool()[self.name] = self.value
 
 	def erase(self):
 		if name in get_var_pool():

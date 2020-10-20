@@ -24,6 +24,9 @@ class TupleManage:
 		value = self.t_dict[key]
 		del self.t_dict[key]
 		return value
+	def __delitem__(self, key):
+		key = self.unpack(key)
+		del self.t_dict[key]
 
 class VarPool:
 		
@@ -72,7 +75,8 @@ class VarPool:
 	def __delitem__(self, key):
 		if self.check_key(key):
 			del self.tm[key]
-		del self.tm[key]
+		else:
+			del self.__dict__[key]
 
 
 

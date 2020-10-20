@@ -184,7 +184,10 @@ class PrivateTensor:
 
 	def add_value(self, value):
 		self.__store_value.append(value)
-		
+	
+	def set_value(self, value):
+		assert isinstance(value, IntTensor)
+		self.__value = value
 
 	def open(self, composite = None):
 		if isinstance(self.__store_value[0], PrivateTensor):
