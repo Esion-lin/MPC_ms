@@ -28,4 +28,19 @@ class Factory:
 	@staticmethod
 	def get_uniform(shape:list, module = encodeFP32.module()):
 		return np.random.randint(module,size=shape)
+	@staticmethod
+	def get_sym_random(seed):
+		return hash(seed)
+		#简单的实现，后面需要修改
+
+class Counter:
+	counter = 0
+	@classmethod
+	def clear(cls):
+		cls.counter = 0
+	@classmethod
+	def get_counter(cls):
+		cls.counter += 1
+		return cls.counter
+
 

@@ -101,6 +101,7 @@ def main(argv):
 										[[1,1,1],[1,1,1],[1,1,1]]]]))
 	net = testNet(weight = w)
 	y = net(image)
+	print(y.name)
 	ans = open_with_player("Emme", y)
 	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	# from nn import Conv

@@ -1,6 +1,7 @@
 # mindmpc
 The **real** MPC-AI framework based on Mindspore
 - [mindmpc](#mindmpc)
+  - [TODO](#todo)
   - [Tensor](#tensor)
     - [**IntTensor**](#inttensor)
     - [**PrivateTensor**](#privatetensor)
@@ -13,6 +14,18 @@ The **real** MPC-AI framework based on Mindspore
     - [**Add**](#add)
     - [**Add_cons**](#add_cons)
     - [**Mul**](#mul)
+## TODO
+- 网络层 
+  - pipe Error 问题解决
+  - ssl网络构建（身份认证的网络）
+- 协议相关
+  - truncation
+- Mindspore相关
+  - 无法使用的算子的临时替换
+- 权重load和save
+- OT/TEE
+- grad
+
 ## Tensor
 ### **IntTensor**
 

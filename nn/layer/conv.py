@@ -2,7 +2,7 @@ from nn.pcell import PrivateCell
 from protocol import get_protocol
 from functools import partial
 from common.placeholder import Placeholder
-import time
+from crypto.factory import Counter
 class Conv(PrivateCell):
     def __init__(self, stride = 1, padding = 0, weight = None):
         self.stride = stride
@@ -20,7 +20,7 @@ class Conv(PrivateCell):
             return output_var
         else:
             #创建临时变量
-            tmp = Placeholder(name = "tmp_{}".format(time.time()))
+            tmp = Placeholder(name = "tmp_{}".format(Counter.get_counter()))
             self.conv2d(x = input_var, y = weight if weight is not None else self.weight, z = tmp)
             return tmp
     def set_weight(self):
