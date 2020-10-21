@@ -3,3 +3,5 @@ from protocol import get_protocol
 class Relu(PrivateCell):
     def construct(self, input_var):
         return get_protocol().relu(input_var)
+    def set_weight(self):
+        pass

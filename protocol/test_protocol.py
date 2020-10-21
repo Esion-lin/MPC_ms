@@ -7,48 +7,47 @@ from nn.pcell import PrivateCell
 from mindspore import nn
 from common.wrap_function import get_global_deco
 from .command_fun import * 
+from common.wrap_of_ms.extend_tensor import avgpool
 
-class Conv2d(PrivateCell):
-	'''
-	w*x ->  y
-	使用tensor明文下的卷积操作构建协议的卷积
-	TODO:添加 channel检查的逻辑 
-	'''
-	def __init__(self, stride, padding):
-		self.stride = stride
-		self.padding = padding
-	def construct(self,**input_var):
-		x = input_var["x"]
-		y = input_var["y"]
-		z = input_var["z"]
-		if "triples" in input_var:
-			triples = input_var["triples"]
-		else:
-			triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
-		a = triples[0]
-		b = triples[1]
-		c = triples[2]
-		#获得privateTensor
-		x_0 = x.fill()
-		y_0 = y.fill()
-		alpha = x_0 - a
-		beta = y_0 - b
-		Placeholder.register(alpha,"alpha")
-		Placeholder.register(beta,"beta")
-		Alpha = open_with_player(player_name = "", var_name = "alpha")
-		Beta = open_with_player(player_name = "", var_name = "beta")
-		z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
-		#																			^此处会导致结果出错, 需要使用截断协议
-	def set_weight(self):
-		raise NotImplementedError("试图调用未定义的方法")
 class Protocol:
 	'''
 	dispatch function:
 	IntTensor -> (IntTensor, [IntTensor])
 	'''
-	nn = {
-		"conv":Conv2d,
-	}
+	class Conv2d(PrivateCell):
+		'''
+		w*x ->  y
+		使用tensor明文下的卷积操作构建协议的卷积
+		TODO:添加 channel检查的逻辑 
+		'''
+		def __init__(self, stride, padding):
+			self.stride = stride
+			self.padding = padding
+		def construct(self,**input_var):
+			x = input_var["x"]
+			y = input_var["y"]
+			z = input_var["z"]
+			if "triples" in input_var:
+				triples = input_var["triples"]
+			else:
+				triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
+			a = triples[0]
+			b = triples[1]
+			c = triples[2]
+			#获得privateTensor
+			x_0 = x.fill()
+			y_0 = y.fill()
+			alpha = x_0 - a
+			beta = y_0 - b
+			Placeholder.register(alpha,"alpha")
+			Placeholder.register(beta,"beta")
+			Alpha = open_with_player(player_name = "", var_name = "alpha")
+			Beta = open_with_player(player_name = "", var_name = "beta")
+			z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
+			#																			^此处会导致结果出错, 需要使用截断协议
+			return z
+		def set_weight(self):
+			raise NotImplementedError("试图调用未定义的方法")
 	@classmethod
 	def dispatch(cls, value:IntTensor):
 		'''
@@ -199,14 +198,6 @@ class Protocol:
 		# fluent interface
 		return z
 	@classmethod
-	def Conv2d(cls, x:Placeholder, w:Placeholder, stride, padding, y:Placeholder):
-		'''
-		w*x ->  y
-		使用tensor明文下的卷积操作构建协议的卷积
-		'''
-		# fluent interface
-		return y
-	@classmethod
 	def square(cls, x:Placeholder, y:Placeholder, triple = None):
 		if x.check():
 			if triple == None:
@@ -246,10 +237,16 @@ class Protocol:
 		return x
 
 	@classmethod
-	def avgpool2d(cls, x, pool_size, strides, padding):
+	def avgpool2d(cls, x, pool_size, strides, padding, y = None):
 		#TODO: 实现平均池化
-		pass
-		return x
+		x_0 = x.fill()
+		tmp = avgpool(x_0, kernel_size = pool_size, stride = strides)
+		if y is None:
+			x.set_value(tmp, force_sys = True)
+			return x
+		else:
+			y.set_value(tmp)
+			return y
 	@classmethod
 	def maxpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现最大池化

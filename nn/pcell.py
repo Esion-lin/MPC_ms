@@ -50,7 +50,7 @@ class PrivateCell(abc.ABC):
 				return traits[name]
 	
 	def __call__(self, *args,**kwargs):
-		self.construct(*args, **kwargs)
+		return self.construct(*args, **kwargs)
 	
 	# @abstractmethod
 	# def get_grad(self, input):

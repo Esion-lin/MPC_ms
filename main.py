@@ -77,17 +77,38 @@ def main(argv):
 	# ans = open_with_player("Emme", "res2")
 	# print("" if ans is None else "mul res is {}".format(ans.to_native()))
 	#test conv
+	from nn.pcell import PrivateCell
+	from nn import Conv
+	from nn.layer.activation import Relu
+	from nn.layer.pooling import avgPooling2D
+	class testNet(PrivateCell):
+		def __init__(self, weight):
+			self.conv2d = Conv(stride=1,padding=0, weight=weight)
+			self.pool = avgPooling2D(kernel_size = 2, stride = 1)
+			self.relu = Relu()
+		def construct(self, input_var):
+			tmp = self.conv2d(input_var)
+			tmp = self.relu(tmp)
+			tmp = self.pool(tmp)
+			return tmp
+		def set_weight(self):
+			#实现默认的权重赋值
+			pass
 	
 	w = input("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
 	image = input("image", IntTensor([[[[1,1,1],[1,1,1],[1,1,1]],
 										[[1,1,1],[1,1,1],[1,1,1]],
 										[[1,1,1],[1,1,1],[1,1,1]]]]))
-	from nn import Conv
-	conv = Conv(1,0)
-	res = Placeholder("res")
-	conv(input_var = image, weight = w, output_var = res)
-	ans = open_with_player("Emme", "res")
+	net = testNet(weight = w)
+	y = net(image)
+	ans = open_with_player("Emme", y)
 	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
+	# from nn import Conv
+	# conv = Conv(1,0)
+	# res = Placeholder("res")
+	# conv(input_var = image, weight = w, output_var = res)
+	# ans = open_with_player("Emme", "res")
+	# print("None" if ans is None else "mul res is {}".format(ans.to_native()))
 	
 	#test triple
 	#Protocol.make_triples("[tmp]","Emme", [3,3,3])
