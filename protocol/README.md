@@ -1,3 +1,5 @@
+- [协议的编写](#协议的编写)
+- [协议的替换](#协议的替换)
 - [协议API](#协议api)
   - [**dispatch**](#dispatch)
   - [**check_open**](#check_open)
@@ -5,6 +7,23 @@
   - [**Add**](#add)
   - [**Add_cons**](#add_cons)
   - [**Mul**](#mul)
+## 协议的编写
+对于ops的操作，协议需要使用协议类包裹，所有的方法采用类方法或静态方法实现；对于所有的nn操作，需要在协议文件中另外创建继承nn.pcell的类，在construct中实现具体细节。
+## 协议的替换
+- 在写main函数时可以使用`protocol.set_protocol`方法来进行全局设置
+
+```python
+from mindmpc.protocol import '编写的协议文件',set_protocol
+set_protocol('编写的协议文件')
+```
+
+- 在**__init__.py**文件中修改以下两部分内容
+
+```python
+from "编写的协议文件" import "协议类"
+
+__protocol__ = "协议类"
+```
 
 ## 协议API
 ### **dispatch**
