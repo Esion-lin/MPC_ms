@@ -17,6 +17,8 @@ class PrivateCell(abc.ABC):
 		pass
 
 	def __setattr__(self, name, value):
+		if name == "weight":
+			object.__setattr__(self, "need_weight", True)
 		cells = self.__dict__.get('_cells')
 		pcells = self.__dict__.get('_pcells')
 		traits = self.__dict__.get("_traits")
@@ -60,6 +62,14 @@ class PrivateCell(abc.ABC):
 	# def construct_extractor(self):
 	# 	pass
 
-	@abstractmethod
 	def set_weight(self):
 		pass
+	def inject(self, weight):
+		#if self.__dict__.get('_pcells')
+		if "need_weight" in self.__dict__:
+			self.weight = weight[0]
+			weight = weight[1:]
+		pcells = self.__dict__.get('_pcells')
+		for ele in pcells:
+			ele.inject(weight[0])
+			weight = weight[1:]
