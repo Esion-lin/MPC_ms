@@ -102,7 +102,7 @@ def main(argv):
 	net = testNet(weight = w)
 	y = net(image)
 	ans = open_with_player("Emme", y)
-	print("None" if ans is None else "mul res is {}".format(ans.to_native()))
+	print("None" if ans is None else "res is {}".format(ans.to_native()))
 	# from nn import Conv
 	# conv = Conv(1,0)
 	# res = Placeholder("res")

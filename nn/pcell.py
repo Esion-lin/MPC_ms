@@ -64,6 +64,7 @@ class PrivateCell(abc.ABC):
 
 	def set_weight(self):
 		pass
+	
 	def inject(self, weight):
 		#if self.__dict__.get('_pcells')
 		if "need_weight" in self.__dict__:
