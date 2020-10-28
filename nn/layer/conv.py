@@ -24,12 +24,12 @@ class Conv(PrivateCell):
             self.conv2d(x = input_var, y = weight if weight is not None else self.weight, z = tmp)
             return tmp
     #deltaX 前向传播， deltaW本层更新
-    def backward(self, delta, input_var, learning_rate = 0.1):
-        # 此处需要加上batch的方法
-        deltaX,deltaW = _conv_dz_IntTensor(input_var,self.weight,self.stride,self.padding)
-        #更新
-        self.weight = self.weight - learning_rate * deltaW
-        return deltaX
+    # def backward(self, delta, input_var, learning_rate = 0.1):
+    #     # 此处需要加上batch的方法
+    #     deltaX,deltaW = _conv_dz_IntTensor(input_var,self.weight,self.stride,self.padding)
+    #     #更新
+    #     self.weight = self.weight - learning_rate * deltaW
+    #     return deltaX
 
     def set_weight(self):
         pass

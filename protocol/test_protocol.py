@@ -7,7 +7,7 @@ from nn.pcell import PrivateCell
 from mindspore import nn
 from common.wrap_function import get_global_deco
 from .command_fun import * 
-from common.wrap_of_ms.extend_tensor import avgpool
+from common.wrap_of_ms.extend_tensor import avgpool，_conv_dz_PrivateTensor
 
 class Protocol:
 	'''
@@ -46,6 +46,17 @@ class Protocol:
 			z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
 			#																			^此处会导致结果出错, 需要使用截断协议
 			return z
+		def backward(self, delta, input_var, learning_rate = 0.1):
+			# 此处需要加上batch的方法
+			x = input_var["x"]
+			y = input_var["y"]
+			x_0 = x.fill()
+			y_0 = y.fill()
+			deltaX,deltaW = _conv_dz_PrivateTensor(x_0,y_0,self.stride,self.padding)
+			#更新
+			y = y - learning_rate * deltaW
+			return deltaX
+
 		def set_weight(self):
 			raise NotImplementedError("试图调用未定义的方法")
 	@classmethod
@@ -251,4 +262,3 @@ class Protocol:
 	def maxpool2d(cls, x, pool_size, strides, padding):
 		#TODO: 实现最大池化
 		pass
-
