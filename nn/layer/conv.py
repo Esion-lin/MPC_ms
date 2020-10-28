@@ -2,7 +2,7 @@ from nn.pcell import PrivateCell
 from protocol import get_protocol
 from functools import partial
 from common.placeholder import Placeholder
-from crypto.factory import Counter
+from crypto.factory import Counter  
 class Conv(PrivateCell):
     def __init__(self, stride = 1, padding = 0, weight = None):
         self.stride = stride
@@ -23,5 +23,13 @@ class Conv(PrivateCell):
             tmp = Placeholder(name = "tmp_{}".format(Counter.get_counter()))
             self.conv2d(x = input_var, y = weight if weight is not None else self.weight, z = tmp)
             return tmp
+    #deltaX 前向传播， deltaW本层更新
+    def backward(self, delta, input_var, learning_rate = 0.1):
+        # 此处需要加上batch的方法
+        deltaX,deltaW = _conv_dz_IntTensor(input_var,self.weight,self.stride,self.padding)
+        #更新
+        self.weight = self.weight - learning_rate * deltaW
+        return deltaX
+
     def set_weight(self):
         pass

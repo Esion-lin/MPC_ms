@@ -85,9 +85,9 @@ class IntTensor:
 			t_filters = filters.convert_public()
 		else:
 			t_filters = filters
-		cov = nn.Conv2d(self.shape[1], t_filters.shape[-3], t_filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=t_filters.to_native())
+		self.cov = nn.Conv2d(self.shape[1], t_filters.shape[-3], t_filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=t_filters.to_native())
 		#																																^需要修改为int
-		return IntTensor(cov(self.to_native()), internal = False)
+		return IntTensor(self.cov(self.to_native()), internal = False)
 		#						^目前不支持整数，需要修改成整数
 
 
