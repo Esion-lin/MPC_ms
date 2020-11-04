@@ -12,9 +12,9 @@ def _avgpool_PrivateTensor(self, kernel_size, stride):
     return PrivateTensor(tensor = _avgpool_IntTensor(self.convert_public(), kernel_size, stride))
 
 def _dz(network,input_value,weight):
-    if network not None:
+    if network is not None:
         params = ParameterTuple(network.trainable_params())
-        grad = C.GradOperation(name = "{}".format(time.time()),get_by_list=True)
+        grad = C.GradOperation(name = "{}".format(time.time()),get_by_list=True, get_all=True)
         gradient_function = grad(conv, params)
         dz = gradient_function(input_value)
         #^ (dx, dw)

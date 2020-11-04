@@ -30,7 +30,7 @@ class Placeholder:
 		if self.is_fill:
 			return self.value
 		while not self.check():
-			time.sleep(1)
+			time.sleep(0.01)
 		self.value = get_var_pool()[self.name]
 		self.is_fill = True
 		if self.is_list ^ isinstance(self.value,list):
@@ -93,6 +93,7 @@ class Placeholder:
 	@staticmethod
 	def register(variable, name):
 		get_var_pool()[name] = variable
+		return Placeholder(name = name,shape = variable.shape)
 	
 	def inject(self):
 		if self.name in get_var_pool():

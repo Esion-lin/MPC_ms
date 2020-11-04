@@ -9,7 +9,7 @@ class PrivateCell(abc.ABC):
 	
 	'''
 	def __init__(self):
-		pass
+		self.train = False
 		#define env
 	@abstractmethod
 	def construct(self, *args, **kwargs):
@@ -53,7 +53,8 @@ class PrivateCell(abc.ABC):
 	
 	def __call__(self, *args,**kwargs):
 		return self.construct(*args, **kwargs)
-	
+	def backward(self, **kwargs):
+		raise NotImplementedError("试图调用未定义的方法")
 	# @abstractmethod
 	# def get_grad(self, input):
 	# 	pass
@@ -74,3 +75,6 @@ class PrivateCell(abc.ABC):
 		for ele in pcells:
 			ele.inject(weight[0])
 			weight = weight[1:]
+	
+	def set_train(self, flag):
+		self.train = flag

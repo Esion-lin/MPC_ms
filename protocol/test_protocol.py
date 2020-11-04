@@ -7,8 +7,8 @@ from nn.pcell import PrivateCell
 from mindspore import nn
 from common.wrap_function import get_global_deco
 from .command_fun import * 
-from common.wrap_of_ms.extend_tensor import avgpool，_conv_dz_PrivateTensor
-
+from common.wrap_of_ms.extend_tensor import avgpool, _conv_dz_PrivateTensor
+from typing import Union
 class Protocol:
 	'''
 	dispatch function:
@@ -46,19 +46,42 @@ class Protocol:
 			z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
 			#																			^此处会导致结果出错, 需要使用截断协议
 			return z
-		def backward(self, delta, input_var, learning_rate = 0.1):
+		def backward(self,**kwargs):
+			delta = kwargs["delta"]
+			if "learning_rate" in kwargs:
+				learning_rate = kwargs["learning_rate"]
 			# 此处需要加上batch的方法
-			x = input_var["x"]
-			y = input_var["y"]
+			x = kwargs["x"]
+			y = kwargs["y"]
 			x_0 = x.fill()
 			y_0 = y.fill()
 			deltaX,deltaW = _conv_dz_PrivateTensor(x_0,y_0,self.stride,self.padding)
 			#更新
-			y = y - learning_rate * deltaW
-			return deltaX
+
+			y_0 = y_0 - learning_rate * Protocol.Mul(deltaW,delta)
+			y.set_value(y_0, force_sys = True)
+			return Protocol.Mul(deltaX,delta)
 
 		def set_weight(self):
 			raise NotImplementedError("试图调用未定义的方法")
+	class L2NormLoss(PrivateCell):
+		def construct(self, *args, **kwargs):
+			x = kwargs["x"]
+			y = kwargs["y"]
+			if isinstance(x, Placeholder):
+				x_0 = x.fill()
+			else:
+				x_0 = x
+			if isinstance(y, Placeholder):
+				y_0 = y.fill()
+			else:
+				y_0 = y
+			z_0 = x_0-y_0
+			Placeholder.register(z_0,"z_0")
+			ans = Protocol.Square(z_0)
+		def backward(self,**kwargs):
+			delta = kwargs["delta"]
+			return 2*delta
 	@classmethod
 	def dispatch(cls, value:IntTensor):
 		'''
@@ -82,50 +105,8 @@ class Protocol:
 		value = share0 + share1[0] + share1[1]
 		return value
 
-
-	# @classmethod
-	# def open_with_player(cls, player_name,var_name):
-	# 	if isinstance(var_name, Placeholder):
-	# 		var_name = var_name.name
-	# 	dec = get_global_deco()
-	# 	@dec.open_(player_name = player_name, var_name = var_name)
-	# 	def open():
-	# 		return get_var_pool()[var_name].open()
-	# 	return open()
-
-	# @classmethod
-	# def input_with_player(cls, player_name,var_name, ptensor):
-	# 	dec = get_global_deco()
-	# 	@dec.to_(player_name = player_name, var_name = var_name)
-	# 	def input():
-	# 		get_var_pool()[var_name] = ptensor
-	# 		return ptensor.share()
-	# 	return input()
-	# 迁移到了command_fun中
-	# @classmethod
-	# def make_triples(cls, triples_name = "", maked_player = "", **kwargs):
-	# 	dec = get_global_deco()
-	# 	@dec.to_(player_name = maked_player, var_name = triples_name)
-	# 	def triples(**kwargs):
-	# 		from protocol.test_protocol import Protocol
-	# 		from common.tensor import PrivateTensor
-	# 		tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple_mn.triple(**kwargs)]
-	# 		get_var_pool()[var_name] = tmp
-	# 		return list(zip(*[ele.share() for ele in tmp]))
-	# 	return triples(**kwargs)
-	#test
-	# @classmethod
-	# def make_mat_triples(cls, triples_name = "", maked_player = "", triples_shapeA = [1,1], triples_shapeB = [1,1]):
-	# 	dec = get_global_deco()
-	# 	@dec.to_(player_name = maked_player, var_name = triples_name)
-	# 	def triples(shape_a, shape_b):
-	# 		from protocol.test_protocol import Protocol
-	# 		from common.tensor import PrivateTensor
-	# 		tmp = [PrivateTensor(tensor = i, shared = True) for i in cls.triple_mn.mat_triple(shape_a, shape_b)]
-	# 		get_var_pool()[var_ele.share() for ele in tmp]))
-	# 	return triples(**kwargs)
-	#test
-	# @classmethody:Placeholder,z:Placeholder = None):
+	@classmethod
+	def add(x:Placeholder, y:Placeholder,z:Placeholder = None):
 		assert x.check() and y.check()
 		if x.shape != y.shape:
 			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
@@ -152,60 +133,72 @@ class Protocol:
 		return x if ans is None else ans 
 
 	@classmethod
-	def Mul(cls, x:Placeholder,y:Placeholder,z:Placeholder, triple = None, with_trunc = True):
-		if x.check() and y.check():
-			print("starting mul, shape is {}".format(x.shape))
-			if x.shape != y.shape:
-				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
-			if triple == None:
-				#测试用例， 需要讨论是否指定生成的用户
-				triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
-				
-				#需要生成triples
-			else:
-				if not triple.is_list:
-					raise TypeError("triples need to be a tuple!!!")
-				if triple[0].shape != x.shape:
-					raise IndexError("triples shape invalid!!!")
-				#使用现成的triples
-			a = triple[0]
-			b = triple[1]
-			c = triple[2]
-			# from common.wrap_function import get_global_deco
-			# dec = get_global_deco()
-			# @dec.open_(player_name = "", var_name = "[tmp]")
-			# def check():
-			# 	aa,bb,cc = [ele.open() for ele in get_var_pool()["[tmp]"]]
-			# 	#print("get [{},{},{}]".format(a,b,c))
-			# 	if aa * bb == cc:
-			# 		print("triples work well {} * {} == {}".format(aa, bb,cc))
-			# 	else:
-			# 		print("{} != {}".format(aa * bb,cc))
-			# check()
+	def Square(cls, x, triples = None):
+		if isinstance(x,Placeholder):
+			assert x.check()
 			x_0 = x.fill()
-			y_0 = y.fill()
-			alpha = x_0 - a
-			beta = y_0 - b
-			Placeholder.register(alpha,"alpha")
-			Placeholder.register(beta,"beta")
-			Alpha = open_with_player(player_name = "", var_name = "alpha")
-			Beta = open_with_player(player_name = "", var_name = "beta")
-			# print("Alpha is {}".format(Alpha),"Beta is {}".format(Beta), "sadfa is {}".format(-(Alpha*Beta)))
-
-			# xxxx = cls.open_with_player(player_name = "Emme", var_name = "x")
-			# yyyy = cls.open_with_player(player_name = "Emme", var_name = "y")
-			# Placeholder.register(y_0*Alpha + x_0*Beta,"kkk")
-			# Placeholder.register(x_0*Beta,"ddd")
-			# kkk = cls.open_with_player(player_name = "Emme", var_name = "kkk")
-			# ddd = cls.open_with_player(player_name = "Emme", var_name = "ddd")
-			# print("x is {}".format(xxxx),"y is {}".format(yyyy))
-			# print("kkk is {}".format(kkk),"ddd is {}".format(ddd))
-			#Todo:实现PlaceHolder
-			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) )
-			if with_trunc:
-				cls.truncate(x = z, d = encodeFP32.scale_size())
 		else:
-			raise NameError("Uninitialized placeholder!!")
+			x_0 = x
+		if triples is None:
+			triples = make_triples(triple_type = "square_triple", triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
+		a = triple[0]
+		b = triple[1]
+		alpha = x_0 - a
+		Placeholder.register(alpha,"alpha")
+		Alpha = open_with_player(player_name = "", var_name = "alpha")
+		if register and z is not None:
+			z.set_value(cls.Add_cons(x_0*Alpha +b, -(Alpha*Alpha)) )
+		else:
+			z = cls.Add_cons(x_0*Alpha +b, -(Alpha*Alpha)) 
+		if with_trunc:
+			cls.truncate(x = z, d = encodeFP32.scale_size())
+		return z
+	@classmethod
+	def Mul(cls, x:Union[Placeholder, PrivateTensor],y:Union[Placeholder, PrivateTensor],z, triple = None, with_trunc = True, register = True):
+		#添加 private 类型的计算
+		if isinstance(x,Placeholder):
+			assert x.check()
+		if isinstance(y,Placeholder):
+			assert y.check()
+		
+		print("starting mul, shape is {}".format(x.shape))
+		if x.shape != y.shape:
+			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
+		if triple == None:
+			#测试用例， 需要讨论是否指定生成的用户
+			triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
+			
+			#需要生成triples
+		else:
+			if not triple.is_list:
+				raise TypeError("triples need to be a tuple!!!")
+			if triple[0].shape != x.shape:
+				raise IndexError("triples shape invalid!!!")
+			#使用现成的triples
+		a = triple[0]
+		b = triple[1]
+		c = triple[2]
+		if isinstance(x,Placeholder):
+			x_0 = x.fill()
+		else:
+			x_0 = x
+		if isinstance(y,Placeholder):
+			y_0 = y.fill()
+		else:
+			y_0 = y
+		alpha = x_0 - a
+		beta = y_0 - b
+		Placeholder.register(alpha,"alpha")
+		Placeholder.register(beta,"beta")
+		Alpha = open_with_player(player_name = "", var_name = "alpha")
+		Beta = open_with_player(player_name = "", var_name = "beta")
+		#Todo:实现PlaceHolder
+		if register and z is not None:
+			z.set_value(cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta)) )
+		else:
+			z = cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta))
+		if with_trunc:
+			cls.truncate(x = z, d = encodeFP32.scale_size())
 		# fluent interface
 		return z
 	@classmethod

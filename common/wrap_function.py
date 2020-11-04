@@ -129,7 +129,7 @@ class PlayerDecorator:
 				else:
 					#wait io
 					while var_name not in get_var_pool():
-						time.sleep(1)
+						time.sleep(0.01)
 					#TODO: timeout check
 					pass
 					return Placeholder(var_name)
@@ -166,10 +166,10 @@ class PlayerDecorator:
 					#TODO 需要重新设计更合理的检查方法
 					if re.match("\[.*\]", var_name):
 						while not get_var_pool()[var_name][0].check_open():
-							time.sleep(1)
+							time.sleep(0.01)
 					else:
 						while not get_var_pool()[var_name].check_open():
-							time.sleep(1)
+							time.sleep(0.01)
 					#TODO: timeout check
 					pass
 					return func(*args, **kwargs)
@@ -184,10 +184,10 @@ class PlayerDecorator:
 				#player run open
 				if re.match("\[.*\]", var_name):
 					while not get_var_pool()[var_name][0].check_open():
-						time.sleep(1)
+						time.sleep(0.01)
 				else:
 					while not get_var_pool()[var_name].check_open():
-						time.sleep(1)
+						time.sleep(0.01)
 				#TODO: timeout check
 				pass
 				return func(*args, **kwargs)

@@ -10,6 +10,7 @@ import sys
 from protocol.test_protocol import Protocol
 from protocol.command_fun import *
 from common.placeholder import Placeholder
+import datetime
 def main(argv):
 	config = Config(filename = "./config")
 	set_config(config)
@@ -100,9 +101,13 @@ def main(argv):
 										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
 										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]]]]))
 	net = testNet(weight = w)
+	start = datetime.datetime.now()
+	print("start ")
 	y = net(image)
 	ans = open_with_player("Emme", y)
 	print("None" if ans is None else "res is {}".format(ans.to_native()))
+	end = datetime.datetime.now()
+	print("time ",end-start)
 	# from nn import Conv
 	# conv = Conv(1,0)
 	# res = Placeholder("res")
