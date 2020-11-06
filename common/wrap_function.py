@@ -8,6 +8,8 @@ from .constant import ACTION
 from .placeholder import Placeholder
 import time
 import re
+from .event_queue import ins_messs_que
+from .event_queue import add_share_que
 def wrap_json(action, key, value):
 	if re.match("\[.*\]", key):
 		# array type
@@ -80,7 +82,7 @@ class PlayerDecorator:
 			return partial(self.from_, player_name = player_name)
 
 		@wraps(func)
-		def wrapper(*args, **kwargs):
+		def wrains_messs_quepper(*args, **kwargs):
 			
 			if player_name != "":
 				if self.check_player(player_name):
@@ -128,10 +130,7 @@ class PlayerDecorator:
 					return Placeholder(var_name)
 				else:
 					#wait io
-					while var_name not in get_var_pool():
-						time.sleep(0.01)
-					#TODO: timeout check
-					pass
+					ins_messs_que.set_ele(var_name).stand()
 					return Placeholder(var_name)
 			#TODO: Three type of combines of player_name and target {"","" : "xxx","xxx" : "","xxx"}
 					
@@ -164,14 +163,17 @@ class PlayerDecorator:
 				else:
 					#wait io
 					#TODO 需要重新设计更合理的检查方法
-					if re.match("\[.*\]", var_name):
-						while not get_var_pool()[var_name][0].check_open():
-							time.sleep(0.01)
-					else:
-						while not get_var_pool()[var_name].check_open():
-							time.sleep(0.01)
-					#TODO: timeout check
-					pass
+					add_share_que.set_ele(var_name).stand()
+					# if re.match("\[.*\]", var_name):
+						
+					# 	while not get_var_pool()[var_name][0].check_open():
+					# 		add_share_que
+					# 		time.sleep(0.01)
+					# else:
+					# 	while not get_var_pool()[var_name].check_open():
+					# 		time.sleep(0.01)
+					# #TODO: timeout check
+					# pass
 					return func(*args, **kwargs)
 					
 			else:
@@ -181,15 +183,16 @@ class PlayerDecorator:
 				#broadcast
 				data = wrap_json(ACTION.OPEN, var_name, get_var_pool()[var_name])
 				get_net_pool().broadcast(data)
+				add_share_que.set_ele(var_name).stand()
 				#player run open
-				if re.match("\[.*\]", var_name):
-					while not get_var_pool()[var_name][0].check_open():
-						time.sleep(0.01)
-				else:
-					while not get_var_pool()[var_name].check_open():
-						time.sleep(0.01)
-				#TODO: timeout check
-				pass
+				# if re.match("\[.*\]", var_name):
+				# 	while not get_var_pool()[var_name][0].check_open():
+				# 		time.sleep(0.01)
+				# else:
+				# 	while not get_var_pool()[var_name].check_open():
+				# 		time.sleep(0.01)
+				# #TODO: timeout check
+				# pass
 				return func(*args, **kwargs)
 		return wrapper
 __deco__ = None

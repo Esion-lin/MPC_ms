@@ -18,7 +18,7 @@ class Protocol:
 		'''
 		w*x ->  y
 		使用tensor明文下的卷积操作构建协议的卷积
-		TODO:添加 channel检查的逻辑 
+		TODO:添加channel检查的逻辑 
 		'''
 		def __init__(self, stride, padding):
 			self.stride = stride
@@ -48,6 +48,7 @@ class Protocol:
 			return z
 		def backward(self,**kwargs):
 			delta = kwargs["delta"]
+			opt = kwargs["opt"]
 			if "learning_rate" in kwargs:
 				learning_rate = kwargs["learning_rate"]
 			# 此处需要加上batch的方法
@@ -57,10 +58,11 @@ class Protocol:
 			y_0 = y.fill()
 			deltaX,deltaW = _conv_dz_PrivateTensor(x_0,y_0,self.stride,self.padding)
 			#更新
-
-			y_0 = y_0 - learning_rate * Protocol.Mul(deltaW,delta)
+			y_0 = opt(y_0,deltaW)
+			y_0 = y_0 - learning_rate * Protocol.Mul(deltaW,delta)#
 			y.set_value(y_0, force_sys = True)
-			return Protocol.Mul(deltaX,delta)
+			z = Placeholder("z")
+			return Protocol.Mul(deltaX,delta,z)
 
 		def set_weight(self):
 			raise NotImplementedError("试图调用未定义的方法")
@@ -201,15 +203,7 @@ class Protocol:
 			cls.truncate(x = z, d = encodeFP32.scale_size())
 		# fluent interface
 		return z
-	@classmethod
-	def square(cls, x:Placeholder, y:Placeholder, triple = None):
-		if x.check():
-			if triple == None:
-				triple = make_triples(triple_type = "square_triple", triples_name = "[tmp]", maked_player = "triples_provider", triples_shape = x.shape)
-			#TODO 使用squre——triple实现该方法
-			pass
-		else:
-			raise NameError("Uninitialized placeholder!!")
+
 	@classmethod
 	def truncate(cls, x:Placeholder, d,y = None, triple = None):
 		if triple is None:

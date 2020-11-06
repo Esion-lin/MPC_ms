@@ -4,6 +4,7 @@ import numpy as np
 from crypto.factory import encodeFP32
 from mindspore.ops import operations as P
 from mindspore import nn
+from .event_queue import add_share_que
 class IntTensor:
 	'''
 
@@ -109,6 +110,9 @@ class PrivateTensor:
 		Check whether the parameter protocol is included, 
 		if included, get the function from the protocol
 		'''
+		if "name" in kwargs:
+			self.name = name
+			
 		if "protocol" in kwargs:
 			self.protocol = kwargs["protocol"]
 		else:
@@ -129,13 +133,14 @@ class PrivateTensor:
 				self.__value, self.__store_value = self.protocol.dispatch(self.tensor)
 			else:
 				self.__value, self.__store_value = kwargs["dispatch"](self.tensor)
-
+			add_share_que.set_ele(self.name).unlock()
 		else:
 			if "tensor" not in kwargs:
 				raise NameError("need keyword tensor!")
 			self.__value = self.check_tensor(kwargs)
 			self.__store_value = []
 			#public -> private
+		
 		self.shape = self.__value.shape
 	def check_tensor(self, dictory):
 		tensor = dictory["tensor"]
@@ -184,6 +189,9 @@ class PrivateTensor:
 
 	def add_value(self, value):
 		self.__store_value.append(value)
+		if self.check_open():
+			add_share_que.set_ele(self.name).unlock()
+
 	
 	def set_value(self, value):
 		assert isinstance(value, IntTensor)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .tensor import PrivateTensor
 import re
+from .event_queue import ins_messs_que
 '''
 用于triples的管理
 '''
@@ -56,6 +57,8 @@ class VarPool:
 		return len(self.__dict__)
 
 	def __setitem__(self, key, value):
+		lockstitch = ins_messs_que.set_ele(key)
+		lockstitch.unlock()
 		if isinstance(value, self.ctype):
 			self.__dict__[key] = value
 		elif isinstance(value, list) and self.check_list(value):

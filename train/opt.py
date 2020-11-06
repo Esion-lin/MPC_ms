@@ -6,6 +6,14 @@ class optimizer(PrivateCell):
     def construct(self, **kwargs):
         #输入梯度，根据优化器算法更新权重
         raise NotImplementedError("试图调用未定义的方法")
+class GD(optimizer):
+    def __init__(self,lr):
+        self.lr = lr
+        self.v = 0
+    def construct(self, **kwargs):
+        self.v = kwargs["delta"]
+        kwargs["weight"] -= self.lr*self.v
+    
 class Momentum(optimizer):
     def __init__(self,lr,momentum):
         self.lr = lr

@@ -96,6 +96,7 @@ def main(argv):
 			#实现默认的权重赋值
 			pass
 	
+	
 	w = input("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
 	image = input("image", IntTensor([[[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
 										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
@@ -108,6 +109,10 @@ def main(argv):
 	print("None" if ans is None else "res is {}".format(ans.to_native()))
 	end = datetime.datetime.now()
 	print("time ",end-start)
+	lossfun = L2NormLoss()
+	opt = GD()
+	model = Model(testNet,lossfun,opt)
+	model.train(w,image)
 	# from nn import Conv
 	# conv = Conv(1,0)
 	# res = Placeholder("res")
