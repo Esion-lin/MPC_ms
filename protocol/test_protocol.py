@@ -20,7 +20,8 @@ class Protocol:
 		使用tensor明文下的卷积操作构建协议的卷积
 		TODO:添加channel检查的逻辑 
 		'''
-		def __init__(self, stride, padding):
+		def __init__(self, stride, padding,**kwargs):
+			PrivateCell.__init__(self,**kwargs)
 			self.stride = stride
 			self.padding = padding
 		def construct(self,**input_var):
@@ -30,7 +31,7 @@ class Protocol:
 			if "triples" in input_var:
 				triples = input_var["triples"]
 			else:
-				triples = make_triples(triple_type = "conv_triple", triples_name = "[tmp]", maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
+				triples = make_triples(triple_type = "conv_triple", triples_name = "[{}_tmp]".format(self.name), maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
 			a = triples[0]
 			b = triples[1]
 			c = triples[2]
@@ -39,10 +40,10 @@ class Protocol:
 			y_0 = y.fill()
 			alpha = x_0 - a
 			beta = y_0 - b
-			Placeholder.register(alpha,"alpha")
-			Placeholder.register(beta,"beta")
-			Alpha = open_with_player(player_name = "", var_name = "alpha")
-			Beta = open_with_player(player_name = "", var_name = "beta")
+			p_alpha = Placeholder.register(alpha,"{}_alpha".format(self.name))
+			p_beta = Placeholder.register(beta,"{}_beta".format(self.name))
+			Alpha = open_with_player(player_name = "", var_name = p_alpha)
+			Beta = open_with_player(player_name = "", var_name = p_beta)
 			z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
 			#																			^此处会导致结果出错, 需要使用截断协议
 			return z

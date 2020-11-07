@@ -8,7 +8,11 @@ class PrivateCell(abc.ABC):
 	output -> Packing(Tensor -> privateTensor)
 	
 	'''
-	def __init__(self):
+	def __init__(self, **kwargs):
+		if "name" in kwargs:
+			self.name = kwargs["name"] 	# 用于进行范围管理
+		else:
+			raise TypeError("need args [name]")
 		self.train = False
 		#define env
 	@abstractmethod

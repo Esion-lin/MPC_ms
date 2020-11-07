@@ -86,6 +86,7 @@ class IntTensor:
 			t_filters = filters.convert_public()
 		else:
 			t_filters = filters
+		print(self.shape,t_filters.shape)
 		self.cov = nn.Conv2d(self.shape[1], t_filters.shape[-3], t_filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=t_filters.to_native())
 		#																																^需要修改为int
 		return IntTensor(self.cov(self.to_native()), internal = False)
@@ -111,8 +112,8 @@ class PrivateTensor:
 		if included, get the function from the protocol
 		'''
 		if "name" in kwargs:
-			self.name = name
-			
+			self.name = kwargs["name"]
+
 		if "protocol" in kwargs:
 			self.protocol = kwargs["protocol"]
 		else:
@@ -133,7 +134,8 @@ class PrivateTensor:
 				self.__value, self.__store_value = self.protocol.dispatch(self.tensor)
 			else:
 				self.__value, self.__store_value = kwargs["dispatch"](self.tensor)
-			add_share_que.set_ele(self.name).unlock()
+			if "name" in self.__dict__:
+				add_share_que.set_ele(self.name).unlock()
 		else:
 			if "tensor" not in kwargs:
 				raise NameError("need keyword tensor!")
@@ -142,6 +144,8 @@ class PrivateTensor:
 			#public -> private
 		
 		self.shape = self.__value.shape
+	def set_name(self, name):
+		self.name = name
 	def check_tensor(self, dictory):
 		tensor = dictory["tensor"]
 		if isinstance(tensor, Tensor) or isinstance(tensor, list):

@@ -9,6 +9,7 @@ def open_with_player(player_name,var_name):
 	dec = get_global_deco()
 	@dec.open_(player_name = player_name, var_name = var_name)
 	def open():
+		print("open",var_name)
 		return get_var_pool()[var_name].open()
 	return open()
 

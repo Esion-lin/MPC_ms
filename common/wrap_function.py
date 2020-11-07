@@ -82,7 +82,7 @@ class PlayerDecorator:
 			return partial(self.from_, player_name = player_name)
 
 		@wraps(func)
-		def wrains_messs_quepper(*args, **kwargs):
+		def wrapper(*args, **kwargs):
 			
 			if player_name != "":
 				if self.check_player(player_name):

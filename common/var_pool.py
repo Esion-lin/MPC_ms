@@ -60,8 +60,11 @@ class VarPool:
 		lockstitch = ins_messs_que.set_ele(key)
 		lockstitch.unlock()
 		if isinstance(value, self.ctype):
+			value.set_name(key)
 			self.__dict__[key] = value
 		elif isinstance(value, list) and self.check_list(value):
+			for ele in value:
+				ele.set_name(key)
 			self.tm[key] = value
 		else:
 			raise TypeError("need {} type".format(self.ctype.__name__))

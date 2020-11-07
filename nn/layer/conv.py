@@ -4,10 +4,11 @@ from functools import partial
 from common.placeholder import Placeholder
 from crypto.factory import Counter  
 class Conv(PrivateCell):
-    def __init__(self, stride = 1, padding = 0, weight = None):
+    def __init__(self, stride = 1, padding = 0, weight = None,**kwargs):
+        PrivateCell.__init__(self,**kwargs)
         self.stride = stride
         self.padding = padding
-        self.conv2d = get_protocol().Conv2d(self.stride, self.padding)
+        self.conv2d = get_protocol().Conv2d(self.stride, self.padding, name = "{}_conv2d".format(self.name))
         if weight is None:
             self.weight = self.set_weight()
         else:

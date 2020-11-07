@@ -28,7 +28,7 @@ def main(argv):
 		print("test")
 
 	def input(name, jtensor):
-		ptensor = PrivateTensor(shared = True, tensor = jtensor)
+		ptensor = PrivateTensor(shared = True, tensor = jtensor, name = name)
 		return input_with_player("Bob", name, ptensor)
 
 	@myDecorator.open_(player_name = "Emme", var_name = "x")
@@ -84,23 +84,26 @@ def main(argv):
 	from nn.layer.pooling import avgPooling2D
 	class testNet(PrivateCell):
 		def __init__(self, weight):
-			self.conv2d = Conv(stride=1,padding=0, weight=weight)
+			self.conv2d = Conv(stride=1,padding=0, weight=weight,name = "conv2d")
+			self.conv2d2 = Conv(stride=1,padding=0, weight=weight,name = "conv2d2")
+			self.conv2d3 = Conv(stride=1,padding=0, weight=weight,name = "conv2d3")
 			self.pool = avgPooling2D(kernel_size = 2, stride = 1)
-			self.relu = Relu()
+			self.relu = Relu(name = "relu")
 		def construct(self, input_var):
 			tmp = self.conv2d(input_var)
 			tmp = self.relu(tmp)
 			tmp = self.pool(tmp)
+			tmp = self.conv2d2(tmp)
+			tmp = self.conv2d3(tmp)
 			return tmp
 		def set_weight(self):
 			#实现默认的权重赋值
 			pass
 	
-	
 	w = input("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
-	image = input("image", IntTensor([[[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
-										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
-										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]]]]))
+	image = input("image", IntTensor([[[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
+										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
+										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]]]))
 	net = testNet(weight = w)
 	start = datetime.datetime.now()
 	print("start ")
@@ -109,10 +112,6 @@ def main(argv):
 	print("None" if ans is None else "res is {}".format(ans.to_native()))
 	end = datetime.datetime.now()
 	print("time ",end-start)
-	lossfun = L2NormLoss()
-	opt = GD()
-	model = Model(testNet,lossfun,opt)
-	model.train(w,image)
 	# from nn import Conv
 	# conv = Conv(1,0)
 	# res = Placeholder("res")
