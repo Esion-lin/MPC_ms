@@ -223,6 +223,7 @@ class PrivateTensor:
 		if isinstance(other, PrivateTensor):
 			return PrivateTensor(tensor = self.__value + other.convert_public())
 		elif isinstance(other, int):
+			# TODO 实现加上一个Int变量的操作
 			pass
 		elif isinstance(other, IntTensor):
 			return PrivateTensor(tensor = self.__value + other)

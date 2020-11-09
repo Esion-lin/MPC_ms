@@ -3,12 +3,14 @@ from crypto.factory import encodeFP32
 from common.tensor import IntTensor, PrivateTensor
 from common.placeholder import Placeholder
 from common.var_pool import get_pool as get_var_pool 
+from common.VCM import vcm
 from nn.pcell import PrivateCell
 from mindspore import nn
 from common.wrap_function import get_global_deco
 from .command_fun import * 
 from common.wrap_of_ms.extend_tensor import avgpool, _conv_dz_PrivateTensor
 from typing import Union
+import sys
 class Protocol:
 	'''
 	dispatch function:
@@ -25,28 +27,25 @@ class Protocol:
 			self.stride = stride
 			self.padding = padding
 		def construct(self,**input_var):
-			x = input_var["x"]
-			y = input_var["y"]
-			z = input_var["z"]
-			if "triples" in input_var:
-				triples = input_var["triples"]
-			else:
-				triples = make_triples(triple_type = "conv_triple", triples_name = "[{}_tmp]".format(self.name), maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
-			a = triples[0]
-			b = triples[1]
-			c = triples[2]
-			#获得privateTensor
-			x_0 = x.fill()
-			y_0 = y.fill()
-			alpha = x_0 - a
-			beta = y_0 - b
-			p_alpha = Placeholder.register(alpha,"{}_alpha".format(self.name))
-			p_beta = Placeholder.register(beta,"{}_beta".format(self.name))
-			Alpha = open_with_player(player_name = "", var_name = p_alpha)
-			Beta = open_with_player(player_name = "", var_name = p_beta)
-			z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
-			#																			^此处会导致结果出错, 需要使用截断协议
-			return z
+			with vcm(self.name) as vcm_controller:
+				x = input_var["x"]
+				y = input_var["y"]
+				z = input_var["z"]
+				if "triples" in input_var:
+					triples = input_var["triples"]
+				else:
+					triples = make_triples(triple_type = "conv_triple", triples_name = "[{}_tmp]".format(self.name), maked_player = "Emme", shapeX = x.shape, shapeY = y.shape, stride = self.stride, padding = self.padding)
+				a = triples[0]
+				b = triples[1]
+				c = triples[2]
+				#获得privateTensor
+				alpha = x - a
+				beta = y - b
+				Alpha = open_with_player(player_name = "", var_name = alpha)
+				Beta = open_with_player(player_name = "", var_name = beta)
+				z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
+				#																			^此处会导致结果出错, 需要使用截断协议
+				return z
 		def backward(self,**kwargs):
 			delta = kwargs["delta"]
 			opt = kwargs["opt"]
@@ -109,29 +108,19 @@ class Protocol:
 		return value
 
 	@classmethod
-	def add(x:Placeholder, y:Placeholder,z:Placeholder = None):
+	def add(x:Placeholder, y:Placeholder):
 		assert x.check() and y.check()
 		if x.shape != y.shape:
 			raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
-		x_0 = x.fill()
-		y_0 = y.fill()
-		if z == None:
-			z = Placeholder("z")
-		z.set_value(x_0 + y_0)
-		z.inject()
-		# fluent interface
-		return z
+		return x + y
+
+
 	@classmethod
 	def Add_cons(cls, x, y):
 		dec = get_global_deco()
 		@dec.from_(player_name = "Emme")
 		def add(input_x, input_y):
-			if isinstance(input_x, Placeholder):
-				input_x.value = input_x.value + input_y
-				input_x.inject()
-			elif isinstance(input_x, PrivateTensor):
-				input_x = input_x + input_y
-			return input_x
+			return input_x + input_y
 		ans = add(x, y)
 		return x if ans is None else ans 
 

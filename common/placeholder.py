@@ -1,7 +1,7 @@
 from .var_pool import get_pool as get_var_pool
 import time
 import re
-
+from common.tensor import PrivateTensor
 class Placeholder:
 	'''
 	#### 同步
@@ -45,14 +45,7 @@ class Placeholder:
 			if isinstance(self.value, list):
 				self.shape = self.value[0].shape
 			else:
-				self.shape = self.value.shape
-		return self.value
-		
-	def check(self):
-		return self.name in get_var_pool()
-
-	def __getitem__(self, key):
-		if not self.is_list:
+				self.shape = self.value.shapePrivateTensor
 			raise TypeError("PrivateTensor cannot be accessed by subscripts!")
 		if not isinstance(key, int):
 			raise TypeError("index should be type of int!!")
@@ -106,4 +99,40 @@ class Placeholder:
 			del get_var_pool()[name]
 		del self
 		return None
-		
+	
+	def dispatch(self, other, opt):
+		assert self.check()
+		def add(a, b):
+			return a + b
+		def sub(a,b):
+			return a - b
+		def mul(a,b):
+			return a * b
+		def truediv(a,b):
+			return a / b
+		switch = {	"add":add,
+					"sub":sub,
+					"mul":mul,
+					"truediv":truediv}
+		if isinstance(other, Placeholder):
+			assert other.check()
+			newptensor = switch(opt)(self.fill(),other.fill())
+			if self.tmp_name is None:
+				raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
+			return Placeholder.register(newptensor,"{}_{}_add_{}".format(self.tmp_name,self.name,other.name))
+		elif isinstance(other, PrivateTensor):
+			newptensor = switch(opt)(self.fill(),other.fill())
+			if self.tmp_name is None:
+				raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
+			if other.name is None:
+				raise RuntimeError("尝试使用为注册的变量")
+			return Placeholder.register(newptensor,"{}_{}_add_{}".format(self.tmp_name,self.name,other.name))
+
+	def __add__(self, other):
+		self.dispatch(other,"add")
+	def __sub__(self, other):
+		self.dispatch(other,"sub")
+	def __mul__(self, other):
+		self.dispatch(other,"mul")
+	def __truediv__(self, other):
+		self.dispatch(other,"truediv")
