@@ -43,7 +43,7 @@ class Protocol:
 				beta = y - b
 				Alpha = open_with_player(player_name = "", var_name = alpha)
 				Beta = open_with_player(player_name = "", var_name = beta)
-				z.set_value(Protocol.Add_cons(Alpha.Conv(y_0,self.stride,self.padding) + x_0.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
+				z.set_value(Protocol.Add_cons(Alpha.Conv(y,self.stride,self.padding) + x.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size())
 				#																			^此处会导致结果出错, 需要使用截断协议
 				return z
 		def backward(self,**kwargs):

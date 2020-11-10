@@ -99,9 +99,8 @@ class Placeholder:
 			del get_var_pool()[name]
 		del self
 		return None
-	
-	def dispatch(self, other, opt):
-		assert self.check()
+	@staticmethod
+	def __dispatch_form(a, b, opt, *args):
 		def add(a, b):
 			return a + b
 		def sub(a,b):
@@ -110,23 +109,29 @@ class Placeholder:
 			return a * b
 		def truediv(a,b):
 			return a / b
+		def conv(a,b,*args):
+			return a.Conv(b,*args)
 		switch = {	"add":add,
 					"sub":sub,
 					"mul":mul,
-					"truediv":truediv}
-		if isinstance(other, Placeholder):
+					"truediv":truediv,
+					"conv":conv}
+		return switch[opt](a, b, *args)
+
+	def dispatch(self, other, opt, *args, reverse = False):
+		assert self.check()
+		if reverse:
+			newptensor = __dispatch_form(other, self.fill(), opt, *args)
+		elif isinstance(other, Placeholder):
 			assert other.check()
-			newptensor = switch(opt)(self.fill(),other.fill())
-			if self.tmp_name is None:
-				raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
-			return Placeholder.register(newptensor,"{}_{}_add_{}".format(self.tmp_name,self.name,other.name))
-		elif isinstance(other, PrivateTensor):
-			newptensor = switch(opt)(self.fill(),other.fill())
-			if self.tmp_name is None:
-				raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
-			if other.name is None:
-				raise RuntimeError("尝试使用为注册的变量")
-			return Placeholder.register(newptensor,"{}_{}_add_{}".format(self.tmp_name,self.name,other.name))
+			newptensor = __dispatch_form(self.fill(), other.fill(), opt, *args)
+		else:
+			newptensor = __dispatch_form(self.fill(), other, opt, *args)
+		if self.tmp_name is None:
+			raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
+		if other.name is None:
+			raise RuntimeError("尝试使用为注册的变量")
+		return Placeholder.register(newptensor,"{}_{}_{}_{}".format(self.tmp_name, self.name, opt, other.name))
 
 	def __add__(self, other):
 		self.dispatch(other,"add")
@@ -136,3 +141,16 @@ class Placeholder:
 		self.dispatch(other,"mul")
 	def __truediv__(self, other):
 		self.dispatch(other,"truediv")
+	def Conv(self, filters, stride, padding):
+		self.dispatch(filters,"conv",stride, padding)
+
+	def __radd__(self, other):
+		self.dispatch(other,"add", reverse = True)
+	def __rsub__(self, other):
+		self.dispatch(other,"sub", reverse = True)
+	def __rmul__(self, other):
+		self.dispatch(other,"mul", reverse = True)
+	def __rtruediv__(self, other):
+		self.dispatch(other,"truediv", reverse = True)
+	def rConv(self, filters, stride, padding, reverse = True):
+		self.dispatch(filters,"conv",stride, padding)

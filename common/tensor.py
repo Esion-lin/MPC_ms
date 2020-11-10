@@ -41,15 +41,21 @@ class IntTensor:
 		elif isinstance(other, PrivateTensor):
 			# 数据与share相加得到share
 			return PrivateTensor(tensor = self + other.convert_public())
+		else:
+			raise NotImplementedError("未实现的方法")
 		#self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
 		#return self
 
 	def __sub__(self, other):
+		if not isinstance(other,IntTensor):
+			raise NotImplementedError("未实现的方法")
 		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
 
 	def __mul__(self, other):
 		if isinstance(other, int):
 			return IntTensor((self.value.asnumpy() * other) % encodeFP32.module(), internal = True)
+		elif not isinstance(other, IntTensor):
+			raise NotImplementedError("未实现的方法")
 		else:
 			ans = IntTensor((self.mul(self.value, other.value)).asnumpy()  % encodeFP32.module(),internal = True) 
 			return ans
@@ -59,10 +65,15 @@ class IntTensor:
 			return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True) 
 		elif isinstance(other, int):
 			return IntTensor(self.value.asnumpy() / other,internal = True)
+		else:
+			raise NotImplementedError("未实现的方法")
 
 	def __eq__(self, other):
-		return (self.value.asnumpy() == other.value.asnumpy()).all()
-	
+		if isinstance(other, IntTensor):
+			return (self.value.asnumpy() == other.value.asnumpy()).all()
+		else:
+			raise NotImplementedError("未实现的方法")
+
 	def __neg__(self):
 		return IntTensor(-self.value.asnumpy() % encodeFP32.module(),internal = True)
 	
@@ -82,12 +93,9 @@ class IntTensor:
 		'''
 		
 		'''
-		if isinstance(filters, PrivateTensor):
-			t_filters = filters.convert_public()
-		else:
-			t_filters = filters
-		print(self.shape,t_filters.shape)
-		self.cov = nn.Conv2d(self.shape[1], t_filters.shape[-3], t_filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=t_filters.to_native())
+		if not isinstance(filters, IntTensor):
+			return filters.rConv(self, stride, padding)
+		self.cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=filters.to_native())
 		#																																^需要修改为int
 		return IntTensor(self.cov(self.to_native()), internal = False)
 		#						^目前不支持整数，需要修改成整数
@@ -227,7 +235,11 @@ class PrivateTensor:
 			pass
 		elif isinstance(other, IntTensor):
 			return PrivateTensor(tensor = self.__value + other)
-
+		else:
+			raise NotImplementedError("调用未实现的方法")
+	
+	def __radd__(self, other):
+		return self.__add__(other)
 
 	def __sub__(self, other):
 		if isinstance(other, PrivateTensor):
@@ -236,8 +248,17 @@ class PrivateTensor:
 			pass
 		elif isinstance(other, IntTensor):
 			return PrivateTensor(tensor = self.__value - other)
+		else:
+			raise NotImplementedError("调用未实现的方法")
 
-
+	def __rsub__(self, other):
+		if isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = other.convert_public() - self.__value)
+		elif isinstance(other, int):
+			pass
+		elif isinstance(other, IntTensor):
+			return PrivateTensor(tensor = other - self.__value)
+	
 	def __mod__(self, other):
 		pass
 
@@ -247,19 +268,38 @@ class PrivateTensor:
 		elif isinstance(other, IntTensor) or isinstance(other, int):
 			return PrivateTensor(tensor = self.__value * other)
 		else:
-			raise TypeError("Does not support multiplication of privateTensor and {}".format(type(other)))
+			raise NotImplementedError("调用未实现的方法")
+	
+	def __rmul__(self, other):
+		return self.__mul__(other)
 
 	def __truediv__(self, other):
 		if isinstance(other, int):
 			return PrivateTensor(tensor = self.__value / other)
 		elif isinstance(other, PrivateTensor):
 			return PrivateTensor(tensor = self.__value / other.convert_public())
+		elif isinstance(other, IntTensor):
+			return PrivateTensor(tensor = self.__value / other)
+		else:
+			raise NotImplementedError("调用未实现的方法")
+	
+	def __rtruediv__(self,other):
+		if isinstance(other, PrivateTensor):
+			return PrivateTensor(tensor = other.convert_public() / self.__value )
+		elif isinstance(other, IntTensor):
+			return PrivateTensor(tensor = other / self.__value)
+		
+		
 	def __floordiv__(self, other):
 		pass
-	
+	def rConv(self, img, stride, padding):
+		return img.Conv(self.convert_public(), stride, padding)
 	def Conv(self, filters, stride, padding):
+		if isinstance(filters, IntTensor):
+			filters = filters.fill()
+		elif not isinstance(filters, PrivateTensor):
+			return filters.rConv(self, stride, padding)
 		return PrivateTensor(tensor = self.__value.Conv(filters, stride, padding))
-
 # wrap with Tensor class
 class Conv2d(nn.Conv2d):
 	def __init__(self, *args, **kwargs):
