@@ -108,6 +108,7 @@ def main(argv):
 	start = datetime.datetime.now()
 	print("start ")
 	y = net(image)
+	print("open ",y.name)
 	ans = open_with_player("Emme", y)
 	print("None" if ans is None else "res is {}".format(ans.to_native()))
 	end = datetime.datetime.now()

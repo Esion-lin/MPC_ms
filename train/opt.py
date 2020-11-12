@@ -12,7 +12,7 @@ class GD(optimizer):
         self.v = 0
     def construct(self, **kwargs):
         self.v = kwargs["delta"]
-        kwargs["weight"] -= self.lr*self.v
+        kwargs["weight"] = kwargs["weight"] - self.lr*self.v
     
 class Momentum(optimizer):
     def __init__(self,lr,momentum):

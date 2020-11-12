@@ -10,8 +10,18 @@ class IntTensor:
 
 	'''
 	#TODO: Access management
-	def __init__(self, tensor, internal = False):
-		if internal == False:
+	def __init__(self, tensor, internal = False,**kwargs):
+		if isinstance(tensor, IntTensor):
+			#copy
+			if "name" in kwargs:
+				self.name = kwargs["name"] 
+			self.value = tensor.value
+		elif isinstance(tensor, PrivateTensor):
+			#explicit convert
+			self.name = tensor.name
+			self.value = tensor.convert_public().value
+		#   ^ top down复制或类型转换的方法 
+		elif internal == False:
 			if isinstance(tensor, Tensor):
 				#transfer to int
 				self.value = Tensor((tensor * encodeFP32.scale_size()).asnumpy(), dtype = mindspore.int32)
@@ -26,16 +36,17 @@ class IntTensor:
 			else:
 				self.value = Tensor(tensor, dtype = mindspore.int32)
 		self.shape = self.value.shape
-		self.add = P.TensorAdd()
-		self.inv = P.Invert()
-		self.mul = P.Mul()
-		self.div = P.FloorDiv()
-		self.matmul = P.MatMul()
+		
+		# self.inv = P.Invert()
+		
+		# self.div = P.FloorDiv()
+		# self.matmul = P.MatMul()
 
 	#TODO: 需要添加对其他类型数据计算的重载
 
 	
 	def __add__(self, other):
+		self.add = P.TensorAdd()
 		if isinstance(other, IntTensor):
 			return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
 		elif isinstance(other, PrivateTensor):
@@ -52,6 +63,7 @@ class IntTensor:
 		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
 
 	def __mul__(self, other):
+		self.mul = P.Mul()
 		if isinstance(other, int):
 			return IntTensor((self.value.asnumpy() * other) % encodeFP32.module(), internal = True)
 		elif not isinstance(other, IntTensor):
@@ -86,6 +98,7 @@ class IntTensor:
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
 	def Matmul(self, other):
+		self.matmul = P.MatMul()
 		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
 		return IntTensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), internal = True)
 
@@ -140,10 +153,7 @@ class PrivateTensor:
 
 			if self.protocol:
 				self.__value, self.__store_value = self.protocol.dispatch(self.tensor)
-			else:
-				self.__value, self.__store_value = kwargs["dispatch"](self.tensor)
-			if "name" in self.__dict__:
-				add_share_que.set_ele(self.name).unlock()
+			else:printhare_que.set_ele(self.name).unlock()
 		else:
 			if "tensor" not in kwargs:
 				raise NameError("need keyword tensor!")
@@ -215,13 +225,13 @@ class PrivateTensor:
 		elif isinstance(self.__store_value[0], IntTensor):
 			__store_value = self.__store_value
 		if composite == None:
-			return self.protocol.composite(self.__value, __store_value)
+			return IntTensor(self.protocol.composite(self.__value, __store_value),name = self.name)
 		elif not callable(composite):
 			raise TypeError("composite should be function")
 		elif not self.check_open():
 			raise IndexError("value length error")
 		else:
-			return composite(self.__value, __store_value)
+			return IntTensor(composite(self.__value, __store_value),name = self.name)
 
 
 	'''
@@ -293,11 +303,11 @@ class PrivateTensor:
 	def __floordiv__(self, other):
 		pass
 	def rConv(self, img, stride, padding):
-		return img.Conv(self.convert_public(), stride, padding)
+		return PrivateTensor(tensor = img.Conv(self.convert_public(), stride, padding))
 	def Conv(self, filters, stride, padding):
-		if isinstance(filters, IntTensor):
+		if isinstance(filters, PrivateTensor):
 			filters = filters.fill()
-		elif not isinstance(filters, PrivateTensor):
+		elif not isinstance(filters, IntTensor):
 			return filters.rConv(self, stride, padding)
 		return PrivateTensor(tensor = self.__value.Conv(filters, stride, padding))
 # wrap with Tensor class

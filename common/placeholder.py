@@ -1,7 +1,8 @@
 from .var_pool import get_pool as get_var_pool
 import time
 import re
-from common.tensor import PrivateTensor
+from common.tensor import PrivateTensor,IntTensor
+import inspect
 class Placeholder:
 	'''
 	#### 同步
@@ -16,15 +17,21 @@ class Placeholder:
 	set_value(ptensor): 使用ptensor设置Placeholder的内容
 	
 	'''
-	def __init__(self, name, shape = None):
-		self.is_fill = False
+	def __init__(self, name = None, shape = None, value = None):
 		self.name = name
 		self.shape = shape
 		self.is_list = True if re.match("\[.*\]", name) else False 
-		# 如果该变量已经在变量池中，则直接填入。
-		if self.check():
-			self.fill()
-		
+		if value is not None:
+			self.is_fill = True
+			self.value = value
+			self.shape = value.shape
+			self.inject()
+		else:
+			self.is_fill = False
+			# 如果该变量已经在变量池中，则直接填入。
+			if self.check():
+				self.fill()
+		self.locked = False
 
 	def fill(self):
 		if self.is_fill:
@@ -45,7 +52,14 @@ class Placeholder:
 			if isinstance(self.value, list):
 				self.shape = self.value[0].shape
 			else:
-				self.shape = self.value.shapePrivateTensor
+				self.shape = self.value.shape
+		return self.value
+		
+	def check(self):
+		return self.name in get_var_pool()
+
+	def __getitem__(self, key):
+		if not self.is_list:
 			raise TypeError("PrivateTensor cannot be accessed by subscripts!")
 		if not isinstance(key, int):
 			raise TypeError("index should be type of int!!")
@@ -67,8 +81,24 @@ class Placeholder:
 				raise RuntimeError("The variable exists in the variable pool and cannot be set!")
 			else:
 				self.inject()
-			
 
+	def rename(self, name):
+		if self.name in get_var_pool():
+			get_var_pool()[name] = get_var_pool()[self.name]
+			if self.locked == True:
+				get_var_pool().lock(name)
+				get_var_pool().unlock(self.name)
+		self.name = name	
+
+	def lock(self):
+		#上锁，防止被清理
+		get_var_pool().lock(self.name)
+		self.locked = True
+
+	def unlock(self):
+		#上锁，防止被清理
+		get_var_pool().unlock(self.name)
+		self.locked = False
 
 	def __iter__(self):
 		if not self.is_list:
@@ -99,8 +129,7 @@ class Placeholder:
 			del get_var_pool()[name]
 		del self
 		return None
-	@staticmethod
-	def __dispatch_form(a, b, opt, *args):
+	def __dispatch_form(self, a, b, opt, *args):
 		def add(a, b):
 			return a + b
 		def sub(a,b):
@@ -121,36 +150,36 @@ class Placeholder:
 	def dispatch(self, other, opt, *args, reverse = False):
 		assert self.check()
 		if reverse:
-			newptensor = __dispatch_form(other, self.fill(), opt, *args)
+			newptensor = self.__dispatch_form(other, self.fill(), opt, *args)
 		elif isinstance(other, Placeholder):
 			assert other.check()
-			newptensor = __dispatch_form(self.fill(), other.fill(), opt, *args)
+			newptensor = self.__dispatch_form(self.fill(), other.fill(), opt, *args)
 		else:
-			newptensor = __dispatch_form(self.fill(), other, opt, *args)
+			newptensor = self.__dispatch_form(self.fill(), other, opt, *args)
 		if self.tmp_name is None:
 			raise RuntimeWarning("在使用Placeholder进行直接计算时，请使用with语句，否则极有可能计算错误")
-		if other.name is None:
-			raise RuntimeError("尝试使用为注册的变量")
+		if isinstance(other, int) or "name" not in other.__dict__:
+			return Placeholder.register(newptensor,"{}_{}_{}_cons".format(self.tmp_name, self.name, opt))
 		return Placeholder.register(newptensor,"{}_{}_{}_{}".format(self.tmp_name, self.name, opt, other.name))
 
 	def __add__(self, other):
-		self.dispatch(other,"add")
+		return self.dispatch(other,"add")
 	def __sub__(self, other):
-		self.dispatch(other,"sub")
+		return self.dispatch(other,"sub")
 	def __mul__(self, other):
-		self.dispatch(other,"mul")
+		return self.dispatch(other,"mul")
 	def __truediv__(self, other):
-		self.dispatch(other,"truediv")
+		return self.dispatch(other,"truediv")
 	def Conv(self, filters, stride, padding):
-		self.dispatch(filters,"conv",stride, padding)
+		return self.dispatch(filters,"conv",stride, padding)
 
 	def __radd__(self, other):
-		self.dispatch(other,"add", reverse = True)
+		return self.dispatch(other,"add", reverse = True)
 	def __rsub__(self, other):
-		self.dispatch(other,"sub", reverse = True)
+		return self.dispatch(other,"sub", reverse = True)
 	def __rmul__(self, other):
-		self.dispatch(other,"mul", reverse = True)
+		return self.dispatch(other,"mul", reverse = True)
 	def __rtruediv__(self, other):
-		self.dispatch(other,"truediv", reverse = True)
-	def rConv(self, filters, stride, padding, reverse = True):
-		self.dispatch(filters,"conv",stride, padding)
+		return self.dispatch(other,"truediv", reverse = True)
+	def rConv(self, filters, stride, padding):
+		return self.dispatch(filters,"conv",stride, padding, reverse = True)

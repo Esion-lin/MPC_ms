@@ -28,7 +28,10 @@ class TupleManage:
 	def __delitem__(self, key):
 		key = self.unpack(key)
 		del self.t_dict[key]
-
+	def clear(self, locklist):
+		for ele in list(self.t_dict.keys()):
+			if ele not in locklist:
+				del self.t_dict[ele]
 class VarPool:
 		
 	'''
@@ -38,14 +41,21 @@ class VarPool:
 	'''
 
 	def __init__(self, ctype, **kwargs):
-		self.__dict__ = kwargs
+		self.__dict = kwargs
 		self.ctype = ctype
 		self.tm = TupleManage()
-	
+		self.lock_item = []
 	def check_key(self, key):
 		if re.match("\[.*\]", key):
 			return True
 		return False
+	
+	def lock(self, key):
+		self.lock_item.append(key)
+
+	def unlock(self, key):
+		if key in self.lock_item:
+			self.lock_item.remove(key)
 
 	def check_list(self, arr:list):
 		for i in arr:
@@ -54,36 +64,42 @@ class VarPool:
 		return True
 
 	def __len__(self):
-		return len(self.__dict__)
+		return len(self.__dict)
 
 	def __setitem__(self, key, value):
 		lockstitch = ins_messs_que.set_ele(key)
 		lockstitch.unlock()
 		if isinstance(value, self.ctype):
 			value.set_name(key)
-			self.__dict__[key] = value
+			self.__dict[key] = value
 		elif isinstance(value, list) and self.check_list(value):
 			for ele in value:
 				ele.set_name(key)
 			self.tm[key] = value
 		else:
-			raise TypeError("need {} type".format(self.ctype.__name__))
+			raise TypeError("need {} type where got {}".format(self.ctype.__name__, type(value)))
 
 	def __getitem__(self, key):
 		if self.check_key(key):
 			return self.tm[key]
-		return self.__dict__[key]
+		return self.__dict[key]
 		
 	def __contains__(self, key):
 		if self.check_key(key):
 			return key in self.tm
-		return key in self.__dict__
+		return key in self.__dict
 	def __delitem__(self, key):
 		if self.check_key(key):
 			del self.tm[key]
 		else:
-			del self.__dict__[key]
+			del self.__dict[key]
 
+	def clear(self):
+		for ele in list(self.__dict.keys()):
+			if ele not in self.lock_item:
+				del self.__dict[ele]
+		self.tm.clear(self.lock_item)
+		
 
 
 

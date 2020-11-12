@@ -161,6 +161,7 @@ class PlayerDecorator:
 					get_net_pool().send(data = data, player = get_config().players[player_name])
 					return self._pass()
 				else:
+					get_var_pool().lock(var_name)
 					#wait io
 					#TODO 需要重新设计更合理的检查方法
 					add_share_que.set_ele(var_name).stand()
@@ -183,6 +184,7 @@ class PlayerDecorator:
 				#broadcast
 				data = wrap_json(ACTION.OPEN, var_name, get_var_pool()[var_name])
 				get_net_pool().broadcast(data)
+				get_var_pool().lock(var_name)
 				add_share_que.set_ele(var_name).stand()
 				#player run open
 				# if re.match("\[.*\]", var_name):
