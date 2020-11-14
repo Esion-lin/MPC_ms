@@ -10,6 +10,9 @@ import sys
 from protocol.test_protocol import Protocol
 from protocol.command_fun import *
 from common.placeholder import Placeholder
+from train.model import Model
+from train.loss import L2NormLoss
+from train.opt import GD
 import datetime
 def main(argv):
 	config = Config(filename = "./config")
@@ -84,6 +87,7 @@ def main(argv):
 	from nn.layer.pooling import avgPooling2D
 	class testNet(PrivateCell):
 		def __init__(self, weight):
+			super(testNet, self).__init__()
 			self.conv2d = Conv(stride=1,padding=0, weight=weight,name = "conv2d")
 			self.conv2d2 = Conv(stride=1,padding=0, weight=weight,name = "conv2d2")
 			self.conv2d3 = Conv(stride=1,padding=0, weight=weight,name = "conv2d3")
@@ -104,13 +108,18 @@ def main(argv):
 	image = input("image", IntTensor([[[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
 										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
 										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]]]))
+	label = input("label", IntTensor([[[[1]],[[1]],[[1]]]]))
 	net = testNet(weight = w)
+	model = Model(net, loss_func = L2NormLoss(), net_opt = GD(0.001))
+	
 	start = datetime.datetime.now()
 	print("start ")
-	y = net(image)
-	print("open ",y.name)
-	ans = open_with_player("Emme", y)
-	print("None" if ans is None else "res is {}".format(ans.to_native()))
+	model(image, label)
+	#y = net(image)
+	# print("y shape",y.shape)
+	# print("open ",y.name)
+	# ans = open_with_player("Emme", y)
+	# print("None" if ans is None else "res is {}".format(ans.to_native()))
 	end = datetime.datetime.now()
 	print("time ",end-start)
 	# from nn import Conv

@@ -35,7 +35,6 @@ class IntTensor:
 				self.value = Tensor(tensor.asnumpy(), dtype = mindspore.int32)
 			else:
 				self.value = Tensor(tensor, dtype = mindspore.int32)
-		self.shape = self.value.shape
 		
 		# self.inv = P.Invert()
 		
@@ -44,7 +43,10 @@ class IntTensor:
 
 	#TODO: 需要添加对其他类型数据计算的重载
 
-	
+	@property
+	def shape(self):
+		return self.value.shape
+
 	def __add__(self, other):
 		self.add = P.TensorAdd()
 		if isinstance(other, IntTensor):
@@ -112,7 +114,9 @@ class IntTensor:
 		#																																^需要修改为int
 		return IntTensor(self.cov(self.to_native()), internal = False)
 		#						^目前不支持整数，需要修改成整数
-
+	def reshape(self, shape):
+		reshape = P.Reshape()
+		self.value = reshape(self.value, shape)
 
 class PrivateTensor:
 	'''
@@ -161,7 +165,11 @@ class PrivateTensor:
 			self.__store_value = []
 			#public -> private
 		
-		self.shape = self.__value.shape
+	@property
+	def shape(self):
+		return self.__value.shape
+
+
 	def set_name(self, name):
 		self.name = name
 	def check_tensor(self, dictory):
@@ -310,6 +318,11 @@ class PrivateTensor:
 		elif not isinstance(filters, IntTensor):
 			return filters.rConv(self, stride, padding)
 		return PrivateTensor(tensor = self.__value.Conv(filters, stride, padding))
+	def reshape(self, shape):
+		self.__value.rehape(shape)
+		for ele in self.__store_value:
+			ele.rehape(shape)
+			
 # wrap with Tensor class
 class Conv2d(nn.Conv2d):
 	def __init__(self, *args, **kwargs):

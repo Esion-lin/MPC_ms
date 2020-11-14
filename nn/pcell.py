@@ -11,9 +11,8 @@ class PrivateCell(abc.ABC):
 	def __init__(self, **kwargs):
 		if "name" in kwargs:
 			self.name = kwargs["name"] 	# 用于进行范围管理
-		else:
-			raise TypeError("need args [name]")
 		self.train = False
+		self.pcells_list = []
 		#define env
 	@abstractmethod
 	def construct(self, *args, **kwargs):
@@ -33,6 +32,9 @@ class PrivateCell(abc.ABC):
 			if traits and name in traits:
 				raise TypeError("Expected type is Trait, but got Cell.")
 			cells[name] = value
+		elif isinstance(value, PrivateCell):
+			self.pcells_list.append(value)
+			object.__setattr__(self, name, value)
 		else:
 			object.__setattr__(self, name, value)
 
@@ -48,10 +50,10 @@ class PrivateCell(abc.ABC):
 	
 	def __call__(self, *args,**kwargs):
 		return self.construct(*args, **kwargs)
-	def backward(self, **kwargs):
-		pcells = self.__dict__.get('_pcells')
-		
-		raise NotImplementedError("试图调用未定义的方法")
+
+	def backward(self, err, opt):
+		for layer in self.pcells_list[::-1]:
+			err = layer.backward(err,opt)
 	# @abstractmethod
 	# def get_grad(self, input):
 	# 	pass

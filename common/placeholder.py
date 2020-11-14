@@ -19,40 +19,42 @@ class Placeholder:
 	'''
 	def __init__(self, name = None, shape = None, value = None):
 		self.name = name
-		self.shape = shape
 		self.is_list = True if re.match("\[.*\]", name) else False 
 		if value is not None:
 			self.is_fill = True
 			self.value = value
-			self.shape = value.shape
-			self.inject()
 		else:
 			self.is_fill = False
 			# 如果该变量已经在变量池中，则直接填入。
 			if self.check():
 				self.fill()
 		self.locked = False
+	@property
+	def value(self):
+		return get_var_pool()[self.name]
+	
+	@value.setter
+	def value(self, _value):
+		self.is_fill = True
+		get_var_pool()[self.name] = _value
 
+	@property
+	def shape(self):
+		if isinstance(self.value, list):
+			return [len(self.value)].extend(self.value[0].shape)
+		return self.value.shape
+	
+	def reshape(self, shape):
+		if isinstance(self.value, list):
+			raise TypeError("Not support reshape for the type of list")
+		self.value.reshape(shape)
+		
 	def fill(self):
 		if self.is_fill:
 			return self.value
 		while not self.check():
 			time.sleep(0.01)
-		self.value = get_var_pool()[self.name]
 		self.is_fill = True
-		if self.is_list ^ isinstance(self.value,list):
-			raise TypeError("except type {}, but got {}!".format("list" if self.is_list else "PrivateTensor", self.value))
-		if self.shape != None:
-			if isinstance(self.value, list):
-				if self.shape != self.value[0].shape:
-					raise IndexError("except shape {}, but got {}!".format(self.shape,self.value.shape))
-			elif self.shape != self.value.shape:
-				raise IndexError("except shape {}, but got {}!".format(self.shape,self.value.shape))
-		else:
-			if isinstance(self.value, list):
-				self.shape = self.value[0].shape
-			else:
-				self.shape = self.value.shape
 		return self.value
 		
 	def check(self):
@@ -70,17 +72,6 @@ class Placeholder:
 			return 1
 		else:
 			return len(self.value)
-	def set_value(self, ptensor, force_sys = False):
-		self.value = ptensor
-		self.shape = ptensor.shape
-		self.is_fill = True
-		if force_sys:
-			self.inject()
-		else:
-			if self.check():
-				raise RuntimeError("The variable exists in the variable pool and cannot be set!")
-			else:
-				self.inject()
 
 	def rename(self, name):
 		if self.name in get_var_pool():
@@ -129,6 +120,7 @@ class Placeholder:
 			del get_var_pool()[name]
 		del self
 		return None
+
 	def __dispatch_form(self, a, b, opt, *args):
 		def add(a, b):
 			return a + b

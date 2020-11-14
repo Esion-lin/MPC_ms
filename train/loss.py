@@ -9,8 +9,9 @@ class softmax(PrivateCell):
 
 class L2NormLoss(PrivateCell):
     def __init__(self):
+        super(L2NormLoss, self).__init__()
         self.l2loss = get_protocol().L2NormLoss()
     def construct(self, *args, **kwargs):
-        x = kwargs["x"]
-        y = kwargs["y"]
+        x = args[0]
+        y = args[1]
         return self.l2loss(x = x, y = y)

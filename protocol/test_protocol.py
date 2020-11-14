@@ -126,14 +126,14 @@ class Protocol:
 			return x if ans is None else ans 
 
 	@classmethod
-	def Square(cls, x, triples = None, out_P = True):
+	def Square(cls, x, triples = None, out_P = True, with_trunc = True):
 		if triples is None:
 			triples = make_triples(triple_type = "square_triple", triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
-		a = triple[0]
-		b = triple[1]
+		a = triples[0]
+		b = triples[1]
 		alpha = x - a
 		Alpha = open_with_player(player_name = "", var_name = alpha)
-		z = cls.Add_cons(x_0*Alpha +b, -(Alpha*Alpha), out_P = out_P)
+		z = cls.Add_cons(x*Alpha +b, -(Alpha*Alpha), out_P = out_P)
 		if with_trunc:
 			z = cls.truncate(x = z, d = encodeFP32.scale_size(), out_P = out_P)
 		return z
