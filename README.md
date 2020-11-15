@@ -2,7 +2,6 @@
 The **real** MPC-AI framework based on Mindspore
 - [mindmpc](#mindmpc)
   - [框架概述](#框架概述)
-  - [TODO](#todo)
   - [模块介绍](#模块介绍)
     - [Player](#player)
     - [Tensor](#tensor)
@@ -14,19 +13,8 @@ The **real** MPC-AI framework based on Mindspore
     - [ops](#ops)
 
 ## 框架概述
+mindmpc是基于Mindspore开发的隐私机器学习计算库
 
-
-## TODO
-- 网络层 
-  - pipe Error 问题解决
-  - 网络构建（身份认证的网络）
-- 协议相关
-  - truncation
-- Mindspore相关
-  - 无法使用的算子的临时替换
-- 权重load和save
-- OT/TEE
-- grad
 ## 模块介绍
 ### Player
 [player](./player/README.md)是用户进行身份辨识，加入到计算网络的基础，用户需要声明自己的用户身份以加入到计算网络中

@@ -12,6 +12,9 @@ class Pooling(PrivateCell):
 class avgPooling2D(Pooling):
     def construct(self, input_var):
         return get_protocol().avgpool2d(input_var, self.kernel_size, self.stride, self.padding)
+    def backward(self, delta, opt):
+        #TODO 
+        return delta
 
 class maxPooling2D(Pooling):
     def construct(self, input_var):

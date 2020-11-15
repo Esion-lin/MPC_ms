@@ -45,7 +45,7 @@ class Protocol:
 				return Protocol.Add_cons(Alpha.Conv(y,self.stride,self.padding) + x.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size()
 				#																			^此处会导致结果出错, 需要使用截断协议
 
-		def backward(self,**kwargs):
+		def backward(self,*args,**kwargs):
 			with vcm() as vcm_controller:
 				delta = kwargs["delta"]
 				opt = kwargs["opt"]
@@ -68,9 +68,9 @@ class Protocol:
 				y = kwargs["y"]
 				z = x - y
 				ans = Protocol.Square(z)
-		def backward(self,**kwargs):
+				return ans
+		def backward(self,delta):
 			with vcm() as vcm_controller:
-				delta = kwargs["delta"]
 				return delta*2
 	@classmethod
 	def dispatch(cls, value:IntTensor):

@@ -15,3 +15,5 @@ class L2NormLoss(PrivateCell):
         x = args[0]
         y = args[1]
         return self.l2loss(x = x, y = y)
+    def backward(self, delta, opt):
+        return self.l2loss.backward(delta)
