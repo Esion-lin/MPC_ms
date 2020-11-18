@@ -17,8 +17,11 @@ class Conv(PrivateCell):
         self.input_var = input_var
         if triple is not None:
             self.conv2d = partial(self.conv2d, triples = triple) #添加对空triple的判断
+        print("rename ",self.conv2d.name)
         ans = self.conv2d(x = input_var, y = weight if weight is not None else self.weight)
+        
         ans.rename("ans_{}".format(self.name))
+        
         ans.lock()
         return ans
     def backward(self, delta, opt):

@@ -7,6 +7,7 @@ class Triple_generator:
 		a = IntTensor(Factory.get_uniform(shape), internal = True)
 		b = IntTensor(Factory.get_uniform(shape), internal = True)
 		c = a * b
+		print(a,b,c)
 		return [a,b,c]
 	#矩阵乘法triple
 	@classmethod
@@ -26,8 +27,8 @@ class Triple_generator:
 	#卷积triple
 	@classmethod
 	def conv_triple(cls, shapeX:list, shapeY:list, stride, padding):
-		a = IntTensor(Factory.get_uniform(shapeX), internal = True)
-		b = IntTensor(Factory.get_uniform(shapeY), internal = True)
+		a = IntTensor(Factory.get_uniform( shapeX), internal = True)
+		b = IntTensor(Factory.get_uniform( shapeY), internal = True)
 		c = a.Conv(b,stride,padding)
 		return [a,b,c]
 	#square triple
@@ -39,6 +40,7 @@ class Triple_generator:
 	#truncation triple
 	@classmethod
 	def trunc_triple(cls, shape, d):
-		a = IntTensor(Factory.get_uniform(shape), internal = True)
-		b = a / d
+		b = IntTensor(Factory.get_uniform(shape,module=2 ** 8), internal = True)
+		a = b * d
+
 		return [a,b]

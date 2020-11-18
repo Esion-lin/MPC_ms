@@ -53,6 +53,7 @@ class PrivateCell(abc.ABC):
 
 	def backward(self, err, opt):
 		for layer in self.pcells_list[::-1]:
+			print(layer.name)
 			err = layer.backward(err,opt)
 	# @abstractmethod
 	# def get_grad(self, input):

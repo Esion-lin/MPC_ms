@@ -30,6 +30,7 @@ class Protocol:
 			with vcm() as vcm_controller:
 				x = input_var["x"]
 				y = input_var["y"]
+				
 				if "triples" in input_var:
 					triples = input_var["triples"]
 				else:
@@ -42,7 +43,18 @@ class Protocol:
 				beta = y - b
 				Alpha = open_with_player(player_name = "", var_name = alpha)
 				Beta = open_with_player(player_name = "", var_name = beta)
-				return Protocol.Add_cons(Alpha.Conv(y,self.stride,self.padding) + x.Conv(Beta,self.stride,self.padding) + c, -(Alpha.Conv(Beta,self.stride,self.padding))) / encodeFP32.scale_size()
+				tmp = Alpha.Conv(y,self.stride,self.padding) + x.Conv(Beta,self.stride,self.padding) + c
+				ans_tmp = open_with_player(player_name = "", var_name = tmp)
+				ans_tmp2 = -(Alpha.Conv(Beta,self.stride,self.padding))
+				# print("tmp data ",ans_tmp)
+				# print("tmp2 data ",ans_tmp2)
+				z = Protocol.Add_cons(tmp, ans_tmp2) 
+				if "with_trunc" in input_var and input_var["with_trunc"] == False:
+					return z	
+				else:
+					print("z_shape",z.shape)
+					z = Protocol.truncate(x = z, d = encodeFP32.scale_size)
+				return z
 				#																			^此处会导致结果出错, 需要使用截断协议
 
 		def backward(self,*args,**kwargs):
@@ -54,10 +66,10 @@ class Protocol:
 				# 此处需要加上batch的方法
 				x = kwargs["x"]
 				y = kwargs["y"]
-				deltaX,deltaW = _conv_dz_Placeholder(x,y,self.stride,self.padding)
+				(deltaX,deltaW) = _conv_dz_Placeholder(x,y,self.stride,self.padding, delta)
 				#更新
-				y = opt(y,Protocol.Mul(deltaW,delta))
-				return Protocol.Mul(deltaX,delta)
+				y = opt(y,deltaW)
+				return deltaX
 
 		def set_weight(self):
 			raise NotImplementedError("试图调用未定义的方法")
@@ -81,6 +93,7 @@ class Protocol:
 		value1 = IntTensor(Factory.get_uniform(value.shape), internal = True)
 		#TODO module addition 
 		value2 = value - value0 - value1
+		# print("dispatch:",value0,value1,value2)
 		return (value0, [value1, value2])
 
 	@classmethod
@@ -111,15 +124,16 @@ class Protocol:
 			@dec.from_(player_name = "Emme")
 			def add(input_x, input_y):
 				out = input_x + input_y
-				out.name = input_x.name
 				return out
 			ans = add(x, y)
 			if out_P:
 				if ans is None:
 					if isinstance(x, Placeholder):
+						x.rename("{}_add_cons_ans".format(Placeholder.tmp_name))
 						return x 
 					return Placeholder("{}_add_cons_ans".format(Placeholder.tmp_name),value = x)
 				elif isinstance(ans, Placeholder):
+					ans.rename("{}_add_cons_ans".format(Placeholder.tmp_name))
 					return ans
 				else:
 					return Placeholder("{}_add_cons_ans".format(Placeholder.tmp_name),value = ans)
@@ -135,7 +149,7 @@ class Protocol:
 		Alpha = open_with_player(player_name = "", var_name = alpha)
 		z = cls.Add_cons(x*Alpha +b, -(Alpha*Alpha), out_P = out_P)
 		if with_trunc:
-			z = cls.truncate(x = z, d = encodeFP32.scale_size(), out_P = out_P)
+			z = cls.truncate(x = z, d = encodeFP32.scale_size, out_P = out_P)
 		return z
 	@classmethod
 	def Mul(cls, x:Union[Placeholder, PrivateTensor],y:Union[Placeholder, PrivateTensor], triple = None, with_trunc = True, out_P = True):
@@ -151,7 +165,7 @@ class Protocol:
 				raise TypeError("except shape {}, but got {}!".format(x.shape,y.shape))
 			if triple == None:
 				#测试用例， 需要讨论是否指定生成的用户
-				triple = make_triples(triples_name = "[tmp]", maked_player = "Emme", shape = x.shape)
+				triple = make_triples(triples_name = "[{}_tmp]".format(vcm.id()), maked_player = "Emme", shape = x.shape)
 				
 				#需要生成triples
 			else:
@@ -167,21 +181,29 @@ class Protocol:
 			beta = y - b
 			Alpha = open_with_player(player_name = "", var_name = alpha)
 			Beta = open_with_player(player_name = "", var_name = beta)
-			z = cls.Add_cons(y_0*Alpha + x_0*Beta + c, -(Alpha*Beta), out_P = out_P)
+			w = y*Alpha + x*Beta + c
+			print("alpha",Alpha)
+			print("beta",Beta)
+			print("y*Alpha + x*Beta + c", w.fill())
+			print("-(Alpha*Beta)", -(Alpha*Beta))
+			z = cls.Add_cons(w, -(Alpha*Beta), out_P = out_P)
+			print(z.name,z.fill())
 			if with_trunc:
-				z = cls.truncate(x = z, d = encodeFP32.scale_size(), out_P = out_P)
+				z = cls.truncate(x = z, d = encodeFP32.scale_size, out_P = out_P)
 			return z
 	
 	@classmethod
 	def truncate(cls, x:Placeholder, d, y = None, triple = None, out_P = True):
-		if triple is None:
-			triple = make_triples(triple_type = "trunc_triple",triples_name = "[tmp2]", maked_player = "Emme", shape = x.shape, d = d)
-			#																		^just for test
-		a = triple[0]
-		b = triple[1]
-		alpha = x - a
-		Alpha = open_with_player(player_name = "", var_name = alpha)
-		return cls.Add_cons(b, Alpha/d, out_P = out_P)
+		with vcm() as vcm_controller:
+			if triple is None:
+				triple = make_triples(triple_type = "trunc_triple",triples_name = "[{}_tmp2]".format(vcm.id()), maked_player = "Emme", shape = x.shape, d = d)
+				#																		^just for test
+			
+			a = triple[0]
+			b = triple[1]
+			alpha = x + a
+			Alpha = open_with_player(player_name = "", var_name = alpha)
+			return cls.Add_cons(-b, Alpha/d, out_P = out_P)
 
 	@classmethod
 	def relu(cls, x:Placeholder):

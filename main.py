@@ -14,6 +14,8 @@ from train.model import Model
 from train.loss import L2NormLoss
 from train.opt import GD
 import datetime
+from crypto.factory import encodeFP32
+import numpy as np
 def main(argv):
 	config = Config(filename = "./config")
 	set_config(config)
@@ -30,7 +32,7 @@ def main(argv):
 	def mul():
 		print("test")
 
-	def input(name, jtensor):
+	def input_data(name, jtensor):
 		ptensor = PrivateTensor(shared = True, tensor = jtensor, name = name)
 		return input_with_player("Bob", name, ptensor)
 
@@ -68,14 +70,13 @@ def main(argv):
 		else:
 			print("{} != {}".format(a * b,c))
 	'''test input and open'''
-	# x = input("x", IntTensor([0.1,0.34,0.088]))
-	# x.fill()
-	# y = input("y", IntTensor([0.1,0.2,0.1]))
-	# y.fill()
-	# res = Placeholder("res")
-	# Protocol.Add(x,y,res)
-	# ans = Protocol.open_with_player("Emme", "res")
-	# print("None" if ans is None else ans.to_native())
+	x = input_data("x", IntTensor([100.3,1,1]))
+	y = input_data("y", IntTensor([1,0.01,1]))
+	res = Protocol.Mul(x,y)
+	ans = open_with_player("Emme", res)
+	
+	print("None" if ans is None else ans.to_native())
+	# return 0
 	# res2 = Placeholder("res2")
 	# Protocol.Mul(x,y,res2)
 	# ans = open_with_player("Emme", "res2")
@@ -88,38 +89,46 @@ def main(argv):
 	class testNet(PrivateCell):
 		def __init__(self, weight):
 			super(testNet, self).__init__()
-			self.conv2d = Conv(stride=1,padding=0, weight=weight,name = "conv2d")
-			self.conv2d2 = Conv(stride=1,padding=0, weight=weight,name = "conv2d2")
-			self.conv2d3 = Conv(stride=1,padding=0, weight=weight,name = "conv2d3")
-			self.pool = avgPooling2D(kernel_size = 2, stride = 1)
+			self.conv2d = Conv(stride=1,padding=0, weight=weight[0],name = "conv2d")
+			
+			self.conv2d2 = Conv(stride=1,padding=0, weight=weight[1],name = "conv2d2")
 			self.relu = Relu(name = "relu")
+			self.pool = avgPooling2D(kernel_size = 2, stride = 1)
+			self.conv2d3 = Conv(stride=1,padding=0, weight=weight[2],name = "conv2d3")
 		def construct(self, input_var):
 			tmp = self.conv2d(input_var)
-			tmp = self.relu(tmp)
-			tmp = self.pool(tmp)
+			a = input("shur")
 			tmp = self.conv2d2(tmp)
+			#tmp = self.relu(tmp)
+			#tmp = self.pool(tmp)
 			tmp = self.conv2d3(tmp)
 			return tmp
 		def set_weight(self):
 			#实现默认的权重赋值
 			pass
-	
-	w = input("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
-	image = input("image", IntTensor([[[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
-										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]],
-										[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]]]))
-	label = input("label", IntTensor([[[[1]],[[1]],[[1]]]]))
-	net = testNet(weight = w)
-	model = Model(net, loss_func = L2NormLoss(), net_opt = GD(0.001))
+
+	# w = input("w", IntTensor(np.random.random((1,1,2,2))))
+	# w2 = input("w2", IntTensor(np.random.random((3,3,2,2))))
+	# w3 = input("w3", IntTensor(np.random.random((3,3,2,2))))
+	w = input_data("w", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
+	w2 = input_data("w2", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
+	w3 = input_data("w3", IntTensor([[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]]]))
+	image = input_data("image", IntTensor([[[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
+										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]],
+										[[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]]]]))
+	#image = input("image", IntTensor([[[[1,1]]]]))
+	# image = input("image", IntTensor(np.random.random((1,3,5,5))))
+	label = input_data("label", IntTensor(np.random.random((1,3,1,1))))
+	net = testNet(weight = [w,w2,w3])
+	#model = Model(net, loss_func = L2NormLoss(), net_opt = GD(1))
 	
 	start = datetime.datetime.now()
 	print("start ")
-	model(image, label)
-	#y = net(image)
-	# print("y shape",y.shape)
-	# print("open ",y.name)
-	# ans = open_with_player("Emme", y)
-	# print("None" if ans is None else "res is {}".format(ans.to_native()))
+	#model(image, label)
+	y = net(image)
+	print("open ",y.name)
+	ans = open_with_player("Emme", y)
+	print("None" if ans is None else "res is {}".format(ans.to_native()))
 	end = datetime.datetime.now()
 	print("time ",end-start)
 	# from nn import Conv

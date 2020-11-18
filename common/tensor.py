@@ -5,12 +5,14 @@ from crypto.factory import encodeFP32
 from mindspore.ops import operations as P
 from mindspore import nn
 from .event_queue import add_share_que
+from common.fake.fakeconv import conv
 class IntTensor:
 	'''
 
 	'''
 	#TODO: Access management
 	def __init__(self, tensor, internal = False,**kwargs):
+		#TODO :添加module
 		if isinstance(tensor, IntTensor):
 			#copy
 			if "name" in kwargs:
@@ -24,18 +26,19 @@ class IntTensor:
 		elif internal == False:
 			if isinstance(tensor, Tensor):
 				#transfer to int
-				self.value = Tensor((tensor * encodeFP32.scale_size()).asnumpy(), dtype = mindspore.int32)
+				self.value = Tensor((tensor * encodeFP32.scale_size).asnumpy() % encodeFP32.module, dtype = mindspore.int32)
 			elif isinstance(tensor, list):
-				self.value = Tensor(np.asarray(tensor) * encodeFP32.scale_size(), dtype = mindspore.int32)
+				self.value = Tensor(np.asarray(tensor) * encodeFP32.scale_size % encodeFP32.module, dtype = mindspore.int32)
 			else:
-				self.value = Tensor(tensor * encodeFP32.scale_size(), dtype = mindspore.int32)
+				self.value = Tensor(tensor * encodeFP32.scale_size % encodeFP32.module , dtype = mindspore.int32)
 		else:
 			if isinstance(tensor, Tensor):
 				#transfer to int
 				self.value = Tensor(tensor.asnumpy(), dtype = mindspore.int32)
 			else:
 				self.value = Tensor(tensor, dtype = mindspore.int32)
-		
+		if "module" in kwargs:
+			self.module =  kwargs["module"]
 		# self.inv = P.Invert()
 		
 		# self.div = P.FloorDiv()
@@ -50,33 +53,34 @@ class IntTensor:
 	def __add__(self, other):
 		self.add = P.TensorAdd()
 		if isinstance(other, IntTensor):
-			return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True)
+			return IntTensor((self.add(self.value, other.value)).asnumpy() % encodeFP32.module,internal = True)
 		elif isinstance(other, PrivateTensor):
 			# 数据与share相加得到share
 			return PrivateTensor(tensor = self + other.convert_public())
 		else:
 			raise NotImplementedError("未实现的方法")
-		#self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module())
+		#self.value = Tensor(self.add(self.value, other.value).asnumpy() % encodeFP32.module)
 		#return self
 
 	def __sub__(self, other):
 		if not isinstance(other,IntTensor):
 			raise NotImplementedError("未实现的方法")
-		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module(),internal = True)
+		return IntTensor((self.value.asnumpy() - other.value.asnumpy()) % encodeFP32.module,internal = True)
 
 	def __mul__(self, other):
 		self.mul = P.Mul()
 		if isinstance(other, int):
-			return IntTensor((self.value.asnumpy() * other) % encodeFP32.module(), internal = True)
+			return IntTensor((self.value.asnumpy() * other) % encodeFP32.module, internal = True)
 		elif not isinstance(other, IntTensor):
 			raise NotImplementedError("未实现的方法")
 		else:
-			ans = IntTensor((self.mul(self.value, other.value)).asnumpy()  % encodeFP32.module(),internal = True) 
+			ans = IntTensor((self.mul(self.value, other.value)).asnumpy()  % encodeFP32.module,internal = True) 
 			return ans
 
 	def __truediv__(self, other):
+		self.div = P.FloorDiv()
 		if isinstance(other, IntTensor):
-			return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module(),internal = True) 
+			return IntTensor((self.div(self.value, other.value)).asnumpy() % encodeFP32.module,internal = True) 
 		elif isinstance(other, int):
 			return IntTensor(self.value.asnumpy() / other,internal = True)
 		else:
@@ -89,20 +93,26 @@ class IntTensor:
 			raise NotImplementedError("未实现的方法")
 
 	def __neg__(self):
-		return IntTensor(-self.value.asnumpy() % encodeFP32.module(),internal = True)
-	
+		return IntTensor(-self.value.asnumpy() % encodeFP32.module,internal = True)
+	def __mod__(self, other):
+		if isinstance(other, IntTensor):
+			return IntTensor(self.value.asnumpy() % other.asnumpy(),internal = True) 
+		elif isinstance(other, int):
+			return IntTensor(self.value.asnumpy() % other,internal = True)
+		else:
+			raise NotImplementedError("未实现的方法")
 	def deserialization(self):
 		return self.value.asnumpy().tolist()
 	
 	def to_native(self):
-		return Tensor(self.value, dtype = mindspore.float16) / encodeFP32.scale_size()
+		return Tensor(self.value, dtype = mindspore.float32) / encodeFP32.scale_size
 
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)
 	def Matmul(self, other):
 		self.matmul = P.MatMul()
-		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size() % encodeFP32.module()
-		return IntTensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module(), internal = True)
+		#self.value = self.matmul(self.value, other.value).asnumpy() / encodeFP32.scale_size % encodeFP32.module
+		return IntTensor(np.dot(self.value.asnumpy(), other.value.asnumpy()) % encodeFP32.module, internal = True)
 
 	def Conv(self, filters, stride, padding):
 		'''
@@ -110,10 +120,14 @@ class IntTensor:
 		'''
 		if not isinstance(filters, IntTensor):
 			return filters.rConv(self, stride, padding)
-		self.cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=filters.to_native())
-		#																																^需要修改为int
-		return IntTensor(self.cov(self.to_native()), internal = False)
-		#						^目前不支持整数，需要修改成整数
+		ans =  IntTensor(conv(self.value.asnumpy(), filters.value.asnumpy(), padding=padding, stride=stride), internal = True)
+		# self.cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=filters.to_native())
+		# #																																^需要修改为int
+		# ans =  IntTensor((self.cov(self.to_native())).asnumpy()*encodeFP32.scale_size, internal = False)% encodeFP32.module
+		# #						^目前不支持整数，需要修改成整数
+		#print("check tensor cov", self, filters, ans,ans% encodeFP32.module, encodeFP32.module)
+		ans = ans  % encodeFP32.module
+		return ans
 	def reshape(self, shape):
 		reshape = P.Reshape()
 		self.value = reshape(self.value, shape)
@@ -169,6 +183,8 @@ class PrivateTensor:
 	def shape(self):
 		return self.__value.shape
 
+	def __repr__(self):
+		return "PrivateTensor({})".format(self.__value)
 
 	def set_name(self, name):
 		self.name = name
@@ -322,6 +338,9 @@ class PrivateTensor:
 		self.__value.rehape(shape)
 		for ele in self.__store_value:
 			ele.rehape(shape)
+	
+	def __neg__(self):
+		return PrivateTensor(tensor = -self.__value)
 			
 # wrap with Tensor class
 class Conv2d(nn.Conv2d):

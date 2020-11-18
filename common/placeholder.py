@@ -120,7 +120,8 @@ class Placeholder:
 			del get_var_pool()[name]
 		del self
 		return None
-
+	def __repr__(self):
+		return "Placeholder({})".format(self.value)
 	def __dispatch_form(self, a, b, opt, *args):
 		def add(a, b):
 			return a + b

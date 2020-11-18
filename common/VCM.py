@@ -1,6 +1,9 @@
 
 class vcm:
     __counter = 0
+    @classmethod
+    def id(cls):
+        return cls.__counter
     def __init__(self):
         vcm.__counter += 1
         self.prv_name = None

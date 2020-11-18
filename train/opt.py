@@ -10,9 +10,10 @@ class GD(optimizer):
     def __init__(self,lr):
         self.lr = lr
         self.v = 0
-    def construct(self, **kwargs):
-        self.v = kwargs["delta"]
-        kwargs["weight"] = kwargs["weight"] - self.v*self.lr
+    def construct(self, weight, delta):
+        self.v = delta
+        weight = weight - self.v * self.lr
+        return weight
     
 class Momentum(optimizer):
     def __init__(self,lr,momentum):
