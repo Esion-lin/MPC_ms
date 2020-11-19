@@ -45,7 +45,8 @@ class IntTensor:
 		# self.matmul = P.MatMul()
 
 	#TODO: 需要添加对其他类型数据计算的重载
-
+	def convert_float32(self):
+		return Tensor(self.value.asnumpy().astype(np.float32),dtype = mindspore.float32)
 	@property
 	def shape(self):
 		return self.value.shape
@@ -121,16 +122,21 @@ class IntTensor:
 		if not isinstance(filters, IntTensor):
 			return filters.rConv(self, stride, padding)
 		ans =  IntTensor(conv(self.value.asnumpy(), filters.value.asnumpy(), padding=padding, stride=stride), internal = True)
-		# self.cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=filters.to_native())
+		#self.cov = nn.Conv2d(self.shape[1], filters.shape[-3], filters.shape[-2:], stride,pad_mode = "pad", padding = padding, weight_init=filters.to_native())
 		# #																																^需要修改为int
-		# ans =  IntTensor((self.cov(self.to_native())).asnumpy()*encodeFP32.scale_size, internal = False)% encodeFP32.module
+		#ans =  IntTensor((self.cov(self.to_native())).asnumpy()*encodeFP32.scale_size, internal = False)% encodeFP32.module
 		# #						^目前不支持整数，需要修改成整数
-		#print("check tensor cov", self, filters, ans,ans% encodeFP32.module, encodeFP32.module)
+		print("check tensor cov", self,"\n", filters,"\n", ans,"\n", encodeFP32.module)
 		ans = ans  % encodeFP32.module
 		return ans
 	def reshape(self, shape):
 		reshape = P.Reshape()
 		self.value = reshape(self.value, shape)
+	
+	def save(self, name):
+		np.save(name,self.value.asnumpy())
+	def load(self, name):
+		self.value = Tensor(np.load(name), dtype = mindspore.int32)
 
 class PrivateTensor:
 	'''
@@ -341,7 +347,12 @@ class PrivateTensor:
 	
 	def __neg__(self):
 		return PrivateTensor(tensor = -self.__value)
-			
+	
+	def save(self, name):
+		self.__value.save(name)
+	def load(self, name):
+		self.__value.load(name)
+
 # wrap with Tensor class
 class Conv2d(nn.Conv2d):
 	def __init__(self, *args, **kwargs):
