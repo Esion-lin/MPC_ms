@@ -2,7 +2,7 @@
 
 import re
 from p2pnetwork.node import Node
-
+from communication import get_net_cb
 class Player:
 	'''
 	'''
@@ -39,10 +39,11 @@ class Player:
 		if self.on:
 			self.node.stop()
 
-__player__ = Player("test", "127.0.0.1:8001")
+__player__ = None
 
 def get_player():
 	return __player__
 def set_player(player):
 	global __player__
 	__player__ = player
+	player.start_node(get_net_cb())

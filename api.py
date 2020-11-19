@@ -5,7 +5,7 @@
 
 #5>.Define variable
 
-import PlaceHolder
+import Placeholder
 
 x = PlaceHolder("x") #Correspond with input function
 y = PlaceHolder("label")

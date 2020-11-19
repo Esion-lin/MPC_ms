@@ -2,7 +2,7 @@
 '''
 conection pool
 '''
-from player import get_player
+
 from config import get_config
 class ConnectionPool:
 	'''
@@ -15,6 +15,7 @@ class ConnectionPool:
 	def init(self, players):
 		if self.players == None:
 			self.players = players
+		from player import get_player
 		myName = get_player().name
 		for name in self.players:
 			if name == myName:
@@ -30,6 +31,7 @@ class ConnectionPool:
 			raise RuntimeError("pool is not initialized!")
 		if len(self.node.nodes_outbound) != len(self.players) - 1:
 			print("reconnecting...")
+			from player import get_player
 			myName = get_player().name
 			for (name,player) in self.players.items():
 				if name == myName:
@@ -62,6 +64,7 @@ class ConnectionPool:
 __pool = None
 def init_pool():
 	global __pool
+	from player import get_player
 	__pool = ConnectionPool(get_player().node, get_config().players)
 	__pool.init(players = None)
 

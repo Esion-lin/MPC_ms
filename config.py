@@ -1,5 +1,5 @@
 import json
-from player import Player
+
 class Config:
 	def __init__(self, player_list = None, filename = None):
 		if filename is not None:
@@ -9,6 +9,7 @@ class Config:
 		else:
 			self.players = {}
 			return
+		from player import Player
 		self.players = {name:Player(name, self._player_list[name]) for name in self._player_list}
 
 
@@ -29,10 +30,11 @@ class Config:
 		assert isinstance(player, Player)
 		if not player.name in self.players:
 			self.players[player.name] = player
-
-
-__config__ = Config()
+__config__ = None
 def get_config():
+	global __config__
+	if __config__ is None:
+		__config__ = Config(filename = "./config")
 	return __config__
 def set_config(config):
 	global __config__

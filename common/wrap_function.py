@@ -204,4 +204,7 @@ def set_global_deco(deco):
 	print("[wrap_function]:", "init deco success")
 
 def get_global_deco():
+	global __deco__
+	if __deco__ is None:
+		__deco__ = PlayerDecorator(get_player())
 	return __deco__

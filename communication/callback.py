@@ -85,7 +85,11 @@ class CallBack:
 		if data != None and data != {}:
 			self.dealer(data)
 
+__net_cb__ = CallBack(Dealer())
 
+def get_net_cb():
+	global __net_cb__
+	return __net_cb__
 
 
 
