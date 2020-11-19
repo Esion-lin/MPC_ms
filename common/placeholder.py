@@ -176,3 +176,7 @@ class Placeholder:
 		return self.dispatch(other,"truediv", reverse = True)
 	def rConv(self, filters, stride, padding):
 		return self.dispatch(filters,"conv",stride, padding, reverse = True)
+	def save(self, name):
+		self.value.save(name)
+	def load(self, name):
+		self.value.load(name)

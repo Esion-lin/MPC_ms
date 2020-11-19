@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Encode:
-	def __init__(self, int_precision: int, frac_precision: int, module = 2**23, base = 2):
+	def __init__(self, int_precision: int, frac_precision: int, module = 2**31, base = 2):
 		self.int_precision = int_precision
 		self.frac_precision = frac_precision
 		self.base = base

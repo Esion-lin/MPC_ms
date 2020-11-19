@@ -45,6 +45,7 @@ class Protocol:
 				Beta = open_with_player(player_name = "", var_name = beta)
 				tmp = Alpha.Conv(y,self.stride,self.padding) + x.Conv(Beta,self.stride,self.padding) + c
 				ans_tmp = open_with_player(player_name = "", var_name = tmp)
+				
 				ans_tmp2 = -(Alpha.Conv(Beta,self.stride,self.padding))
 				# print("tmp data ",ans_tmp)
 				# print("tmp2 data ",ans_tmp2)
@@ -52,7 +53,6 @@ class Protocol:
 				if "with_trunc" in input_var and input_var["with_trunc"] == False:
 					return z	
 				else:
-					print("z_shape",z.shape)
 					z = Protocol.truncate(x = z, d = encodeFP32.scale_size)
 				return z
 				#																			^此处会导致结果出错, 需要使用截断协议
@@ -182,12 +182,9 @@ class Protocol:
 			Alpha = open_with_player(player_name = "", var_name = alpha)
 			Beta = open_with_player(player_name = "", var_name = beta)
 			w = y*Alpha + x*Beta + c
-			print("alpha",Alpha)
-			print("beta",Beta)
-			print("y*Alpha + x*Beta + c", w.fill())
-			print("-(Alpha*Beta)", -(Alpha*Beta))
+			print("w",w)
+			print("-(Alpha*Beta)",-(Alpha*Beta))
 			z = cls.Add_cons(w, -(Alpha*Beta), out_P = out_P)
-			print(z.name,z.fill())
 			if with_trunc:
 				z = cls.truncate(x = z, d = encodeFP32.scale_size, out_P = out_P)
 			return z
@@ -201,9 +198,11 @@ class Protocol:
 			
 			a = triple[0]
 			b = triple[1]
-			alpha = x + a
+			#encodeFP32.module *= encodeFP32.scale_size
+			alpha = x - a
+			#encodeFP32.module = 2**23
 			Alpha = open_with_player(player_name = "", var_name = alpha)
-			return cls.Add_cons(-b, Alpha/d, out_P = out_P)
+			return cls.Add_cons(b, Alpha/d, out_P = out_P)
 
 	@classmethod
 	def relu(cls, x:Placeholder):
