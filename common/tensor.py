@@ -106,7 +106,9 @@ class IntTensor:
 		return self.value.asnumpy().tolist()
 	
 	def to_native(self):
-		return Tensor(self.value, dtype = mindspore.float32) / encodeFP32.scale_size
+		tmp = self.value.asnumpy()
+		ans = np.where(tmp < encodeFP32.threshold, tmp, tmp-encodeFP32.threshold*encodeFP32.base)
+		return Tensor(ans, dtype = mindspore.float32) / encodeFP32.scale_size
 
 	def __repr__(self):
 		return "IntTensor({})".format(self.value)

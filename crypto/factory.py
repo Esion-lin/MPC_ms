@@ -19,12 +19,15 @@ class Encode:
 	@property
 	def module(self):
 		return self.__module
+	@property
+	def threshold(self):
+		return self.module / self.scale_size / self.base
 
 	@module.setter
 	def module(self, value):
 		self.__module = value
 	def pos(self, num):
-		if num < 2 ** 25:
+		if num < 2 ** 22:
 			return True
 		return False
 encodeFP32 = Encode(10,8)

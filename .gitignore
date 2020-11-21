@@ -7,3 +7,4 @@ test*.py
 cuda*/
 main
 _envset.sh
+**/MNIST_Data/

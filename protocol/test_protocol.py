@@ -182,8 +182,6 @@ class Protocol:
 			Alpha = open_with_player(player_name = "", var_name = alpha)
 			Beta = open_with_player(player_name = "", var_name = beta)
 			w = y*Alpha + x*Beta + c
-			print("w",w)
-			print("-(Alpha*Beta)",-(Alpha*Beta))
 			z = cls.Add_cons(w, -(Alpha*Beta), out_P = out_P)
 			if with_trunc:
 				z = cls.truncate(x = z, d = encodeFP32.scale_size, out_P = out_P)
